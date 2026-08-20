@@ -150,6 +150,42 @@ else:
               "synthSelfMapFifty", "synthSelfMap"):
         cmd(n, None)
 
+# ---------------------------------------------------------------- cross domain
+xd = load("cross_domain_metrics.json", None)
+if xd:
+    for key, tag in (("real_self", "RealSelf"), ("sim_self", "SimSelf"),
+                     ("real_to_sim", "RealToSim"), ("sim_to_real", "SimToReal")):
+        v = xd.get(key) or {}
+        cmd(f"xd{tag}Fifty", (v.get("mAP50") or 0) * 100, "{:.1f}")
+        cmd(f"xd{tag}", (v.get("mAP50_95") or 0) * 100, "{:.1f}")
+else:
+    for tag in ("RealSelf", "SimSelf", "RealToSim", "SimToReal"):
+        cmd(f"xd{tag}Fifty", None)
+        cmd(f"xd{tag}", None)
+
+# ---------------------------------------------------------------- repeatability
+rep = load("repeatability.json", None)
+if rep:
+    cmd("repRuns", rep.get("runs"), "{}")
+    cmd("repCompleted", rep.get("missions_completed"), "{}")
+    cmd("repAllTargets", rep.get("all_targets_found"), "{}")
+    for key, tag in (("coverage", "Cover"), ("nav_mean", "NavMean"),
+                     ("nav_max", "NavMax"), ("dvl", "Dvl"),
+                     ("map_rmse", "MapRmse"), ("det_err", "DetErr"),
+                     ("scour_rec", "ScourRec")):
+        v = rep.get(key) or {}
+        dp = 1 if key in ("coverage", "dvl", "scour_rec") else (
+            3 if key in ("nav_mean", "nav_max", "map_rmse") else 2)
+        cmd(f"rep{tag}Mean", v.get("mean"), "{:." + str(dp) + "f}")
+        cmd(f"rep{tag}Std", v.get("std"), "{:." + str(dp) + "f}")
+else:
+    for n in ("repRuns", "repCompleted", "repAllTargets"):
+        cmd(n, None)
+    for tag in ("Cover", "NavMean", "NavMax", "Dvl", "MapRmse", "DetErr",
+                "ScourRec"):
+        cmd(f"rep{tag}Mean", None)
+        cmd(f"rep{tag}Std", None)
+
 # ---------------------------------------------------------------- data efficiency
 de = load("data_efficiency.json", None)
 if de:

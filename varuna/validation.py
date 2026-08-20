@@ -293,6 +293,16 @@ def labelled_tank_frame(seed, sonar_cfg, size=640, n_objects=None,
         row = row + h * 0.18
         if not (0 < col < size and 0 < row < size):
             continue
+        # Clip the box to the image before normalising. A target near the edge
+        # of the fan otherwise produces coordinates outside [0, 1], which YOLO
+        # rejects as a corrupt label and silently drops from the split.
+        x0 = max(col - w / 2.0, 0.0)
+        x1 = min(col + w / 2.0, size - 1.0)
+        y0 = max(row - h / 2.0, 0.0)
+        y1 = min(row + h / 2.0, size - 1.0)
+        if x1 - x0 < 6.0 or y1 - y0 < 6.0:
+            continue
         boxes.append((DATASET_CLASSES.index(t["class"]),
-                      col / size, row / size, w / size, h / size))
+                      ((x0 + x1) / 2.0) / size, ((y0 + y1) / 2.0) / size,
+                      (x1 - x0) / size, (y1 - y0) / size))
     return u8, boxes

@@ -470,43 +470,45 @@ localisation error of \SI{\detMeanErr}{\metre} and a worst case of
 meaningful result: it places a diver or recovery crane within a boat length of
 the target, in water where neither could otherwise be directed at all.
 
-\subsection{Simulator as a training source: a negative result, stated plainly}
+\subsection{Cross-domain transfer: a negative result, stated plainly}
 
 A detector was trained on \synthTrain{} simulated frames with analytically
 derived labels and no human annotation, then evaluated on the real ARIS held
-out test split.
+out test split. The reverse direction was measured the same way, so the two
+are directly comparable: standard detection mAP on a held-out split of the
+other domain.
 
 \begin{table}[htbp]\centering\small
-\caption{Detection performance. The first two rows differ only in training
-data; the third measures the simulator-trained model inside its own domain.}
+\caption{Symmetric cross-domain evaluation. Both models are strong inside
+their own domain and both fail across the gap.}
 \begin{tabular}{llcc}
 \toprule
 \textbf{Trained on} & \textbf{Tested on} & \textbf{mAP@0.5} & \textbf{mAP@0.5:0.95} \\
 \midrule
-Real sonar (\num{1627} images) & real test split & \SI{\yoloTestMapFifty}{\percent} & \SI{\yoloTestMap}{\percent} \\
-Simulator only (\synthTrain{} images) & real test split & \SI{\synthMapFifty}{\percent} & \SI{\synthMap}{\percent} \\
-Simulator only (\synthTrain{} images) & simulated val split & \SI{\synthSelfMapFifty}{\percent} & \SI{\synthSelfMap}{\percent} \\
+Real sonar & real test split & \SI{\xdRealSelfFifty}{\percent} & \SI{\xdRealSelf}{\percent} \\
+Simulator & simulated val split & \SI{\xdSimSelfFifty}{\percent} & \SI{\xdSimSelf}{\percent} \\
+\midrule
+Real sonar & simulated val split & \SI{\xdRealToSimFifty}{\percent} & \SI{\xdRealToSim}{\percent} \\
+Simulator & real test split & \SI{\xdSimToRealFifty}{\percent} & \SI{\xdSimToReal}{\percent} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The third row matters as much as the second. The simulator-trained model
-reaches \SI{\synthSelfMapFifty}{\percent} mAP inside its own domain, which
-establishes that the simulated imagery is internally consistent, correctly
-labelled and genuinely learnable. It is not noise. But that learning does not
-carry across to real tank sonar, and the failure is symmetric: run in the
-opposite direction, the real-trained detector recovers only
-\SI{\simRealRecall}{\percent} of \simRealInstances{} simulated targets across
-\simRealScenes{} scenes, against a mean confidence of \simRealConfReal{} on
-real test images.
+The two diagonal entries matter as much as the off-diagonal ones. Each model
+is strong on its own data, so neither the simulated imagery nor its labels are
+defective: the simulated frames are internally consistent and genuinely
+learnable. The gap is between the domains, and it is close to symmetric, which
+is itself informative. A one-sided failure would suggest the simulator were
+simply too easy or too clean; a symmetric one says the two distributions are
+far apart in a way that neither model bridges.
 
 The diagnosis is that the residual gap is dominated by scene content and
-capture configuration rather than by the acoustic physics. The public data is
-a water tank dense with wall returns, mounting rig and cabling, imaged at a
-short range window and a near grazing look, and its classes are centimetre
-scale objects whose signature depends on fine structure well below what a
-geometric model represents. None of that resembles an open riverbed survey of
-metre scale targets.
+capture configuration rather than by the acoustic physics. The public data is a
+water tank dense with wall returns, mounting rig and cabling, imaged at a short
+range window and a near grazing look, and its classes are centimetre scale
+objects whose signature depends on fine structure well below what a geometric
+model represents. None of that resembles an open riverbed survey of metre scale
+targets.
 
 Two conclusions follow, and both shape the system rather than being excuses.
 First, the simulator should not be presented as a drop in replacement for real
@@ -514,24 +516,101 @@ training data for fine grained classification. Second, and more usefully, the
 capabilities this system actually depends on do not require that transfer at
 all. Locating a submerged bus is a geometry problem, solved by the detector of
 Section~\ref{sec:results} at \detPrimary{}/\detPrimaryTotal{} with no training
-data whatsoever. Where a learned classifier is needed, the relevant question
-is not zero-shot transfer but whether simulator pretraining reduces how much
-real data must be collected, which is measured next.
+data whatsoever. Where a learned classifier is needed, the relevant question is
+not zero-shot transfer but whether simulator pretraining reduces how much real
+data must be collected, which is measured next.
 
-\subsection{Data efficiency}
+\subsection{Data efficiency: simulator pretraining does not help either}
 
-The operational situation is that a limited amount of real sonar can be
-collected from a target site, but nothing close to enough to train from
-scratch. The useful question is therefore whether pretraining on simulator
-output lowers that requirement. Two arms, identical except for
-initialisation, were trained on the same $N$ real images and evaluated on the
-same untouched real test split: one starting from generic natural-image
+If zero-shot transfer fails, the next question is whether simulator
+pretraining at least reduces how much real data must be collected. This is the
+question that would decide whether the simulator earns its place in the
+perception pipeline, so it was measured directly. Two arms, identical except
+for initialisation, were trained on the same $N$ real images and evaluated on
+the same untouched real test split: one starting from generic natural-image
 weights, one from the simulator-trained weights.
 
 \keyfig{../results/figures/f10_data_efficiency.png}
 {Real-data efficiency. Both arms are trained on the same real images and
-evaluated on the same real test split, differing only in initialisation.}
+evaluated on the same real test split, differing only in initialisation.
+Simulator pretraining is worse at every size except the largest.}
 {fig:dataeff}
+
+\begin{table}[htbp]\centering\small
+\caption{Detection mAP@0.5 on the real test split against the number of real
+training images.}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Real images} & \textbf{Natural-image init} & \textbf{Simulator init} & \textbf{Difference} \\
+\midrule
+40 & \SI{56.4}{\percent} & \SI{45.8}{\percent} & $-10.5$ \\
+80 & \SI{76.8}{\percent} & \SI{64.1}{\percent} & $-12.7$ \\
+160 & \SI{89.3}{\percent} & \SI{83.1}{\percent} & $-6.2$ \\
+320 & \SI{96.4}{\percent} & \SI{91.8}{\percent} & $-4.6$ \\
+640 & \SI{97.5}{\percent} & \SI{97.9}{\percent} & $+0.4$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The result is negative and is reported as such. Simulator pretraining is worse
+than generic pretraining at every data size that matters, and only draws level
+once enough real data is present that the initialisation no longer matters.
+The likely mechanism is ordinary negative transfer: natural-image pretraining
+supplies broad low-level features, whereas pretraining on a narrow synthetic
+sonar distribution overwrites them with domain-specific features that do not
+match the real sensor.
+
+This settles the question honestly. The simulator is not a useful training
+source for this classification problem, and no amount of presentation should
+suggest otherwise.
+
+What the simulator is genuinely for is threefold, and none of it depends on
+this transfer:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+\item \textbf{Closed-loop autonomy validation.} Every navigation, control and
+mission result in Section~\ref{sec:results} exists because the vehicle can be
+flown against physically modelled sensors and hydrodynamics.
+\item \textbf{Design decisions that cannot be made any other way.} The finding
+that the standard commercial platform is out of envelope, and the fin
+requirement that follows from the Munk moment, came from the simulation and
+changed the vehicle.
+\item \textbf{The geometric detector.} Locating a submerged bus is a geometry
+problem, solved at \detPrimary{}/\detPrimaryTotal{} with no training data at
+all. That is the capability the disaster mission actually needs, and it is
+precisely the one for which no labelled sonar exists.
+\end{enumerate}
+
+\subsection{Repeatability}
+
+A single run is an anecdote. The mission was repeated across \repRuns{}
+independent seeds, re-randomising sensor noise, DVL dropout pattern and sonar
+speckle while holding the scene fixed.
+
+\begin{table}[htbp]\centering\small
+\caption{Mission repeatability across \repRuns{} independent runs, mean and
+standard deviation.}
+\begin{tabular}{lc}
+\toprule
+\textbf{Metric} & \textbf{Mean $\pm$ SD} \\
+\midrule
+Search-box coverage & \repCoverMean{} $\pm$ \repCoverStd{} \% \\
+Navigation error, mean & \repNavMeanMean{} $\pm$ \repNavMeanStd{} m \\
+Navigation error, maximum & \repNavMaxMean{} $\pm$ \repNavMaxStd{} m \\
+DVL availability & \repDvlMean{} $\pm$ \repDvlStd{} \% \\
+Bathymetric map RMSE & \repMapRmseMean{} $\pm$ \repMapRmseStd{} m \\
+Target localisation error & \repDetErrMean{} $\pm$ \repDetErrStd{} m \\
+Scour depth recovery & \repScourRecMean{} $\pm$ \repScourRecStd{} \% \\
+\midrule
+Missions completed & \repCompleted{}/\repRuns{} \\
+All primary targets found & \repAllTargets{}/\repRuns{} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\keyfig{../results/figures/f11_repeatability.png}
+{Per-seed results with the mean marked. The spread, not the best run, is the
+honest statement of what the system does.}{fig:repeat}
 
 % ======================================================================
 \section{Verification and honest limitations}

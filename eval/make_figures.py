@@ -56,7 +56,7 @@ def shade_phases(ax):
 
 # =====================================================================  fig 1
 fig, ax = plt.subplots(1, 2, figsize=(14.5, 5.6))
-im = ax[0].pcolormesh(site.xs, site.ys, site.H, shading="auto", cmap="Blues_r")
+im = ax[0].pcolormesh(site.xs, site.ys, site.H, shading="auto", cmap="terrain")
 plt.colorbar(im, ax=ax[0], label="bed elevation (m)", fraction=0.035)
 for ph, a, b in phase_spans():
     m = (t >= a) & (t <= b)
@@ -66,11 +66,20 @@ for i, p in enumerate(site.cfg.piers):
     ax[0].add_patch(Circle((p.x, p.y), p.radius, fc="0.25", ec="k", zorder=5))
     ax[0].annotate(f"P{i+1}", (p.x, p.y), color="w", ha="center", va="center",
                    fontsize=7, zorder=6)
+# Only the operationally significant targets are labelled. Every boulder and
+# rubble block is registered as ground truth for the detection evaluation, but
+# annotating all of them here would bury the track.
 for name, tg in site.targets.items():
-    ax[0].plot(tg["centre"][0], tg["centre"][1], marker="s", ms=6,
-               mfc="none", mec=WARN, mew=1.6, zorder=7)
-    ax[0].annotate(name, (tg["centre"][0], tg["centre"][1]), fontsize=6.5,
-                   color=WARN, xytext=(4, 4), textcoords="offset points")
+    primary = tg["class"] in ("vehicle_large", "vehicle_small", "structure")
+    if primary:
+        ax[0].plot(tg["centre"][0], tg["centre"][1], marker="s", ms=7,
+                   mfc="none", mec=WARN, mew=1.7, zorder=7)
+        ax[0].annotate(name, (tg["centre"][0], tg["centre"][1]), fontsize=7,
+                       color=WARN, xytext=(5, 5), textcoords="offset points",
+                       fontweight="bold")
+    else:
+        ax[0].plot(tg["centre"][0], tg["centre"][1], marker=".", ms=3.5,
+                   color="0.35", zorder=6)
 x0, x1, y0, y1 = summary.get("search_box", (-6.0, 52.0, -16.0, 20.0))
 ax[0].add_patch(plt.Rectangle((x0, y0), x1 - x0, y1 - y0, fill=False,
                               ec="k", ls="--", lw=0.9, alpha=0.6))

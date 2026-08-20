@@ -37,8 +37,11 @@ ax[0].plot(ns, coco, "o-", color="#57606a", lw=1.8, ms=6,
 ax[0].plot(ns, sim, "s-", color="#1f6feb", lw=1.8, ms=6,
            label="simulator pretraining")
 ax[0].set_xscale("log")
+# Log scale adds minor ticks that collide with the sample-size labels.
 ax[0].set_xticks(ns)
 ax[0].set_xticklabels([str(n) for n in ns])
+ax[0].xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
+ax[0].xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
 ax[0].set_xlabel("real training images")
 ax[0].set_ylabel("mAP@0.5 on the real test split (%)")
 ax[0].set_title("Real-data efficiency")
