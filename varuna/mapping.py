@@ -152,6 +152,147 @@ def estimate_scour(bmap: BathymetryMap, pier_xy, pier_radius,
     }
 
 
+def bed_residual(bmap: BathymetryMap, window=17):
+    """Height of the mapped surface above a smooth estimate of the bare bed.
+
+    The bed is estimated by a grey-scale morphological opening: a rolling
+    minimum followed by a rolling maximum. That follows broad bathymetry,
+    including scour hollows, while removing compact objects standing proud of
+    it. What remains in the residual is precisely the things that do not
+    belong to the riverbed.
+    """
+    from scipy.ndimage import (minimum_filter, maximum_filter, uniform_filter,
+                               distance_transform_edt)
+
+    z = bmap.mean_z
+    have = np.isfinite(z)
+    if not have.any():
+        return np.full_like(z, np.nan), np.zeros_like(z)
+
+    # Unmapped cells must be filled before filtering, but filling them with a
+    # global constant puts a cliff around the surveyed area. The morphological
+    # opening then reads that cliff as a very large object and merges genuine
+    # targets near the boundary into it. Nearest-valid extrapolation instead
+    # continues the bed smoothly outward and leaves no artificial step.
+    idx = distance_transform_edt(~have, return_distances=False,
+                                 return_indices=True)
+    filled = z[tuple(idx)]
+
+    opened = maximum_filter(minimum_filter(filled, size=window), size=window)
+    opened = uniform_filter(opened, size=max(window // 2, 3))
+    res = np.where(have, filled - opened, np.nan)
+    return res, opened
+
+
+def detect_objects_from_residual(bmap: BathymetryMap, min_height=0.45,
+                                 min_area_m2=2.0, window=55,
+                                 min_hits=2, edge_erode=1, max_extent=45.0,
+                                 close_cells=5):
+    """Find objects standing above the riverbed, from geometry alone.
+
+    This is a purely geometric detector: it needs no training data and no
+    labelled sonar, only a bathymetric map. It provides an independent
+    detection channel alongside the learned classifier, and it is what makes
+    the system useful for target classes that have no public training data,
+    such as submerged buses.
+
+    Parameter choice is set by the physics rather than tuned. ``window`` must
+    exceed the largest object of interest, because morphological opening only
+    removes features smaller than its structuring element: a window shorter
+    than an 11 m bus absorbs the bus into the bed estimate and hides it
+    entirely. The default of 55 cells is 27.5 m, clear of the 15 m deck slab.
+    Depressions such as scour hollows survive opening at any window size, so
+    the window can be set generously. ``min_height`` is set above the measured
+    bathymetric map RMSE so that map noise alone cannot raise a detection.
+    """
+    from scipy.ndimage import label, find_objects
+
+    from scipy.ndimage import binary_erosion
+
+    res, bed = bed_residual(bmap, window)
+    # Only trust cells sounded more than once, and pull the analysis away from
+    # the ragged edge of the surveyed area, where the morphological bed
+    # estimate has no support on one side and produces spurious steps.
+    solid = bmap.count >= min_hits
+    if edge_erode > 0:
+        solid = binary_erosion(solid, np.ones((2 * edge_erode + 1,) * 2))
+    mask = np.isfinite(res) & (res > min_height) & solid
+    # Sparse coverage breaks a single object into several fragments. Closing
+    # rejoins them so one object is reported once, with a usable extent.
+    if close_cells > 0:
+        from scipy.ndimage import binary_closing
+        mask = binary_closing(mask, np.ones((close_cells,) * 2))
+    lab, n = label(mask)
+    cell = bmap.res ** 2
+    out = []
+    for i, sl in enumerate(find_objects(lab), start=1):
+        blob = (lab[sl] == i)
+        area = float(blob.sum() * cell)
+        if area < min_area_m2:
+            continue
+        ext_x = (sl[1].stop - sl[1].start) * bmap.res
+        ext_y = (sl[0].stop - sl[0].start) * bmap.res
+        # A blob spanning tens of metres is a survey-boundary artefact, not an
+        # object lying on the riverbed.
+        if max(ext_x, ext_y) > max_extent:
+            continue
+        ys, xs = np.nonzero(blob)
+        gx = bmap.x0 + (sl[1].start + xs) * bmap.res
+        gy = bmap.y0 + (sl[0].start + ys) * bmap.res
+        h = res[sl][blob]
+        out.append({
+            "centre": (float(gx.mean()), float(gy.mean())),
+            "area": area,
+            "height": float(np.nanmax(h)),
+            "mean_height": float(np.nanmean(h)),
+            "extent": (float(gx.max() - gx.min()), float(gy.max() - gy.min())),
+            "cells": int(blob.sum()),
+        })
+    out.sort(key=lambda d: -d["area"])
+    return out, res, bed
+
+
+def match_detections(detections, truth, gate=6.0, footprint_aware=True):
+    """Greedy nearest-neighbour association of detections to known targets.
+
+    For extended targets a fixed centroid gate is the wrong test: an
+    \SI{15}{\metre} deck slab detected anywhere along its length is found, even
+    though its cluster centroid may sit several metres from the object centre.
+    When ``footprint_aware`` is set the gate is widened to half the target's
+    own diagonal, so large objects are judged by whether the detection falls on
+    them rather than by an arbitrary fixed radius.
+
+    Returns (matches, missed, false_positives) where a match carries the
+    localisation error in metres.
+    """
+    used = set()
+    matches, missed = [], []
+    for name, tg in truth.items():
+        c = np.asarray(tg["centre"][:2], float)
+        g = gate
+        if footprint_aware and "size" in tg:
+            s = np.asarray(tg["size"], float)
+            g = max(gate, 0.5 * float(np.hypot(s[0], s[1])))
+        best, bd = None, np.inf
+        for k, det in enumerate(detections):
+            if k in used:
+                continue
+            dist = float(np.linalg.norm(np.asarray(det["centre"]) - c))
+            if dist < bd:
+                best, bd = k, dist
+        if best is not None and bd <= g:
+            used.add(best)
+            matches.append({"name": name, "truth": tuple(c),
+                            "detected": detections[best]["centre"],
+                            "error": bd, "det": detections[best],
+                            "class": tg.get("class", "")})
+        else:
+            missed.append({"name": name, "truth": tuple(c),
+                           "class": tg.get("class", ""), "nearest": bd})
+    fps = [d for k, d in enumerate(detections) if k not in used]
+    return matches, missed, fps
+
+
 class TargetTracker:
     """Clusters and tracks detections so each object is reported once.
 

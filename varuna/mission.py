@@ -291,8 +291,8 @@ class MissionRunner:
             ping_pose = est_pose.copy()
             ping_pose[4] += np.radians(14.0)
             fr = self.fls.ping(ping_pose, t=self.t)
-            self.bmap.add(fr.hit_point, max_incidence_deg=78.0,
-                          incidence=fr.hit_incidence)
+            self.bmap.add(fr.all_point, max_incidence_deg=78.0,
+                          incidence=fr.all_incidence)
             dets = self._perceive(fr)
             if dets:
                 self.tracker.update(dets, self.t)

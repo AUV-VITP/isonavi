@@ -2,10 +2,15 @@ __pycache__/
 *.pyc
 .venv/
 venv/
-results/logs/
-results/video/
-*.mp4
-*.npz
-*.pt
 datasets/
 .ipynb_checkpoints/
+
+# Regenerable or large binaries. Weights come from the Kaggle kernels in
+# ml/kaggle, video frames from eval/make_video.py.
+*.pt
+results/video/frames/
+*.gif
+docs/*.aux
+docs/*.log
+docs/*.out
+docs/*.toc

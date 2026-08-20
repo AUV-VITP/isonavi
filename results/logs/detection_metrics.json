@@ -1,0 +1,55 @@
+{
+ "clusters": 27,
+ "primary_detected": 4,
+ "primary_total": 4,
+ "primary_mean_error_m": 1.1762569670353353,
+ "primary_max_error_m": 2.551957482544709,
+ "by_class": {
+  "structure": {
+   "detected": 1,
+   "total": 1
+  },
+  "debris": {
+   "detected": 1,
+   "total": 9
+  },
+  "vehicle_large": {
+   "detected": 2,
+   "total": 2
+  },
+  "vehicle_small": {
+   "detected": 1,
+   "total": 1
+  },
+  "boulder": {
+   "detected": 3,
+   "total": 14
+  }
+ },
+ "matches": [
+  {
+   "name": "collapsed_span",
+   "class": "structure",
+   "error_m": 0.3905366518817466,
+   "height_m": 1.8826846168798674
+  },
+  {
+   "name": "bus_1",
+   "class": "vehicle_large",
+   "error_m": 2.551957482544709,
+   "height_m": 1.8632178176922913
+  },
+  {
+   "name": "bus_2",
+   "class": "vehicle_large",
+   "error_m": 0.9347323091644595,
+   "height_m": 3.2703401554242486
+  },
+  {
+   "name": "car_1",
+   "class": "vehicle_small",
+   "error_m": 0.8278014245504257,
+   "height_m": 1.3410902677037875
+  }
+ ]
+}

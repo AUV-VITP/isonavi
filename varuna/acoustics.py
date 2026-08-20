@@ -172,6 +172,13 @@ class SonarFrame:
     hit_material: np.ndarray | None = None
     hit_point: np.ndarray | None = None   # (n_beams, 3) world coordinates
     hit_incidence: np.ndarray | None = None
+    # Every ray intersection in the fan, not just the nearest return per beam.
+    # A bottom-detection stage on a real multibeam extracts returns across the
+    # whole swath, so this is what the mapper should consume: the nearest
+    # return alone samples only the leading edge of the insonified band.
+    all_point: np.ndarray | None = None    # (n_valid, 3)
+    all_incidence: np.ndarray | None = None
+    all_material: np.ndarray | None = None
 
     def normalised(self) -> np.ndarray:
         """Map dB to [0, 1] over the configured dynamic range."""
@@ -181,12 +188,19 @@ class SonarFrame:
         return np.clip((self.polar - lo) / max(dr, 1e-6), 0.0, 1.0)
 
     def to_cartesian(self, size=512):
-        """Fan-shaped Cartesian rendering, the usual operator view."""
+        """Fan-shaped Cartesian rendering, the usual operator view.
+
+        The vertical axis spans the actual range window rather than starting
+        at zero. Including the blind zone in front of the head would leave a
+        large empty wedge that carries no information and, when these frames
+        are used as training data, would let a network separate them from real
+        captures on layout alone.
+        """
         img = self.normalised()
         half = self.bearings.max()
-        xs = np.linspace(-self.ranges.max() * np.sin(half),
-                         self.ranges.max() * np.sin(half), size)
-        ys = np.linspace(0.0, self.ranges.max(), size)
+        r0, r1 = float(self.ranges[0]), float(self.ranges[-1])
+        xs = np.linspace(-r1 * np.sin(half), r1 * np.sin(half), size)
+        ys = np.linspace(r0, r1, size)
         X, Y = np.meshgrid(xs, ys)
         R = np.hypot(X, Y)
         B = np.arctan2(X, Y)
@@ -357,10 +371,14 @@ class ForwardLookingSonar:
         hi_ang = np.full(cfg.n_beams, np.nan)
         hi_ang[good] = np.degrees(np.arccos(np.clip(cos_i[flat[good]], 0, 1)))
 
+        pts_all = origins[valid] + r[valid, None] * dirs[valid]
+        inc_all = np.degrees(np.arccos(np.clip(cos_i[valid], 0, 1)))
         return SonarFrame(polar=db, ranges=self.ranges, bearings=self.bearings,
                           pose=pose.copy(), t=t, config=cfg,
                           hit_range=hr, hit_material=hm,
-                          hit_point=hp, hit_incidence=hi_ang)
+                          hit_point=hp, hit_incidence=hi_ang,
+                          all_point=pts_all, all_incidence=inc_all,
+                          all_material=hit.material[valid])
 
     # Octaves for the seabed patchiness field: (wavelength m, amplitude dB).
     _PATCH_OCTAVES = ((11.0, 2.6), (3.7, 1.7), (1.3, 1.1), (0.55, 0.7))

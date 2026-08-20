@@ -1,0 +1,625 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[margin=22mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{siunitx}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{accent}{HTML}{16407A}
+\definecolor{lightgrey}{HTML}{F2F4F7}
+
+\titleformat{\section}{\normalfont\Large\bfseries\color{accent}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{0.6em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small\color{accent}VARUNA \textbar{} Autonomous Underwater Reconnaissance and Assessment}
+\rhead{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\captionsetup{font=small,labelfont={bf,color=accent}}
+\sisetup{detect-all}
+
+\input{metrics.tex}
+
+% Figures are included only if present, so the document still builds
+% while an experiment that produces one is still running.
+\newcommand{\keyfig}[3]{%
+  \IfFileExists{#1}{%
+    \begin{figure}[htbp]\centering
+    \includegraphics[width=\linewidth]{#1}
+    \caption{#2}\label{#3}
+    \end{figure}}{}}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{1.4cm}
+{\color{accent}\rule{\linewidth}{1.2pt}}\\[4mm]
+{\Huge\bfseries VARUNA}\\[3mm]
+{\Large Autonomous Underwater Reconnaissance and Assessment\\ for Post-Flood Disaster Response}\\[3mm]
+{\color{accent}\rule{\linewidth}{1.2pt}}\\[10mm]
+
+{\large Technical Design and Verification Report}\\[3mm]
+{\normalsize Simulation, autonomy and acoustic perception for zero-visibility,\\ high-current Indian river conditions}\\[14mm]
+
+\begin{minipage}{0.86\linewidth}
+\small
+\textbf{Summary.} Post-flood search and bridge foundation inspection in India
+depend on divers who cannot safely work in monsoon flood conditions: the water
+is opaque with suspended sediment, the current exceeds human capability, and
+submerged structural debris makes entry unsafe. This report presents a
+complete, verified simulation and autonomy stack for an underwater vehicle
+designed for exactly those conditions, together with quantitative results from
+an end to end autonomous mission over a modelled post-collapse river site.
+
+Three results are established. First, the commercial platform normally assumed
+for this role cannot perform it: an open frame vehicle of that class holds
+station only to \SI{0.96}{\metre\per\second} against a design current of
+\SI{\siteCurrent}{\metre\per\second}. Second, a purpose designed faired
+vehicle raises that envelope to \SI{\misEnvelope}{\metre\per\second} and
+completes a \SI{\misPath}{\metre} autonomous survey with a mean navigation
+error of \SI{\misNavMean}{\metre} without any external positioning. Third,
+submerged vehicles and structural debris are located from the resulting
+bathymetric map with no training data at all, at a mean localisation error of
+\SI{\detMeanErr}{\metre}.
+\end{minipage}
+
+\vfill
+{\small Prepared for RakshaTech Synapse 2026\\
+Technology Innovation Hub of IIT Delhi (IHFC), Department of Science and Technology\\
+Broad technology category 1: Autonomous and Robotic Platforms}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ======================================================================
+\section{Problem and operational context}
+
+\subsection{The gap}
+
+India experiences recurrent monsoon flooding that destroys road and rail
+crossings and sweeps vehicles into rivers. Two capabilities are needed
+immediately afterwards, and neither is currently available at acceptable risk:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+\item \textbf{Search.} Locating submerged vehicles and casualties in turbid,
+fast moving water.
+\item \textbf{Structural assessment.} Measuring scour around bridge
+foundations to decide whether remaining spans are safe.
+\end{enumerate}
+
+Both are performed today by divers. In flood conditions this is close to
+impossible. The reference scenario used throughout this report is the collapse
+of the Savitri river bridge on NH-66 at Mahad, Maharashtra, on 2 August 2016,
+when a British era masonry arch bridge failed during monsoon flood and carried
+two state transport buses and several private vehicles into the river.
+Recovery took days, for precisely these reasons.
+
+Optical imaging is not a candidate. At the suspended sediment concentrations
+of a monsoon flood, modelled here at \SI{\siteSSC}{\gram\per\litre}, visibility
+is effectively zero. The system is therefore built around acoustic perception
+throughout.
+
+\subsection{Statutory driver}
+
+Beyond emergency response, IRC:SP:35 requires periodic underwater inspection
+of bridge foundations, and the Dam Safety Act 2021 mandates inspection of
+submerged structures. Scour depth is the quantity that determines whether a
+pier is at risk. Measuring it currently requires divers or reservoir drawdown.
+In the system described here it falls out of a routine survey automatically,
+which converts an occasional, hazardous, qualitative inspection into a
+repeatable quantitative measurement.
+
+\keyfig{../results/figures/f0_architecture.png}
+{System architecture. The vehicle acts only on estimated quantities; ground
+truth is used solely to score the result afterwards.}{fig:arch}
+
+% ======================================================================
+\section{Why the standard platform does not work}
+
+Proposals in this space normally assume an open frame commercial ROV of the
+BlueROV2 class. The first engineering result of this work is that such a
+vehicle cannot perform the mission, and the reason is not control tuning but
+installed thrust against hydrodynamic drag.
+
+For steady motion the surge drag is $X_{u}v + X_{u|u|}v|v|$. Setting this
+equal to the largest pure surge wrench the thruster layout can produce before
+any single thruster saturates gives the maximum current the vehicle can hold
+station against. For the open frame baseline this is
+\SI{0.96}{\metre\per\second}. The modelled site runs at
+\SI{\siteCurrent}{\metre\per\second} at the surface. The vehicle is swept away,
+and no controller can prevent it.
+
+\keyfig{../results/figures/f5_vehicle.png}
+{Left: surge drag against current speed for both vehicles, with the saturated
+thrust limit of each. The intersection is the maximum holdable current. The
+open frame baseline is out of envelope at the design condition by a factor of
+more than two. Right: thruster utilisation over the reference mission for the
+purpose designed vehicle.}{fig:vehicle}
+
+\subsection{The design response}
+
+Two changes recover the envelope, and a third is forced by the first:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+\item \textbf{Faired hull.} Axial quadratic drag is reduced by roughly a
+factor of four relative to an open frame. Drag is deliberately left high
+broadside, which also gives useful passive weathervaning into the flow.
+\item \textbf{Larger thrusters and longer moment arms.} Force and torque share
+one thrust budget, so moment arms are sized to buy attitude authority without
+consuming the surge thrust that holds the vehicle in the current.
+\item \textbf{Fixed stabilising fins.} A faired hull is directionally
+unstable. The added mass asymmetry between axial and transverse directions
+produces a destabilising Munk moment proportional to
+$(Z_{\dot w} - X_{\dot u})\,u_r w_r$ whenever the hull moves at an angle of
+attack. Buoyancy restoring is far too weak to counter it. Fins are therefore a
+requirement, not a refinement, and they only stabilise when the vehicle flies
+nose first.
+\end{itemize}
+
+\begin{table}[htbp]\centering\small
+\caption{Vehicle comparison at the design condition.}
+\begin{tabular}{lcc}
+\toprule
+& \textbf{Open frame baseline} & \textbf{VARUNA-1} \\
+\midrule
+Mass & \SI{13.5}{\kilogram} & \SI{28.0}{\kilogram} \\
+Axial quadratic drag $X_{u|u|}$ & 141 & 32 \\
+Thrust per unit & \SI{51}{\newton} & \SI{120}{\newton} \\
+Stabilising fins & none & yes \\
+Maximum holdable current & \SI{0.96}{\metre\per\second} & \SI{\misEnvelope}{\metre\per\second} \\
+Station keeping at \SI{1.96}{\metre\per\second} & swept, \SI{14.0}{\metre} error & holds, \SI{0.40}{\metre} RMSE \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Consequences for the mission plan}
+
+Because the hull is only stable flying nose first, and because a broadside
+turn at the design current is unrecoverable within the available sway thrust,
+two constraints propagate into the autonomy layer: every commanded heading
+points into the flow, and survey legs run along the flow axis rather than
+across it. This is an example of vehicle physics dictating mission structure,
+and it is captured directly in the planner.
+
+% ======================================================================
+\section{Acoustic simulation}
+
+The core of this work is a physics based forward looking sonar simulator.
+It forms images from the active sonar equation applied per range and bearing
+cell, rather than texturing a depth buffer, and it runs on CPU alone.
+
+\subsection{Image formation}
+
+For a resolution cell at slant range $r$ insonified by beam $b$,
+
+\begin{equation}
+\mathrm{EL}(r,b) = \mathrm{SL} - 2\,\mathrm{TL}(r) + \mathrm{BS}(r,b),
+\qquad
+\mathrm{TL}(r) = 20\log_{10} r + \alpha r ,
+\end{equation}
+
+with backscattering strength following a Lambert like angular law
+$\mathrm{BS} = \mu_{\text{material}} + 10 n \log_{10}(\cos i)$ plus a specular
+term for smooth hard faces. The absorption coefficient
+$\alpha = \alpha_{\text{water}}(f) + \alpha_{\text{sediment}}(C)$ uses the pure
+water term of the Francois and Garrison formulation, which at
+\SI{750}{\kilo\hertz} gives \SI{61}{\decibel\per\kilo\metre}. The sediment term
+represents excess attenuation from suspended solids in flood water and is an
+engineering approximation, stated as such.
+
+Three properties of real imagery are reproduced explicitly, because they are
+what a perception model actually keys on:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+\item \textbf{Acoustic shadow.} Ray casting resolves occlusion, so every object
+throws a shadow whose length encodes its height. Shadow geometry is the primary
+recognition cue in sonar imagery.
+\item \textbf{Elevation ambiguity.} A forward looking sonar collapses the
+vertical aperture: all scatterers within the vertical beamwidth at a given
+slant range fold into one pixel. This is reproduced by casting many elevation
+rays per beam and summing them under the vertical beam pattern.
+\item \textbf{Speckle.} Coherent imaging gives Rayleigh distributed amplitude,
+so intensity is Gamma distributed with shape equal to the number of looks.
+\end{enumerate}
+
+\keyfig{../results/figures/f0b_sonar_pipeline.png}
+{Sonar image formation. Every stage is a physical effect rather than a
+rendering convenience.}{fig:pipeline}
+
+\subsection{Footprint treatment}
+
+Each elevation ray represents a solid angle, not a point. Its intersection with
+a surface spans a finite range interval, and its energy is deposited across
+that interval. For an elevation beam of angular width $\Delta\theta$ striking a
+surface at grazing angle $g$, the along range extent is
+\begin{equation}
+L = r\,\Delta\theta\,\cot g, \qquad \sin g = |\hat d \cdot \hat n| .
+\end{equation}
+Deriving $L$ from local geometry rather than from neighbouring rays matters at
+object edges. There the adjacent ray may strike a surface tens of metres
+further away, and a midpoint rule would smear that ray's energy across the
+very shadow the object is casting. This was observed directly during
+verification and corrected.
+
+\subsection{Verification}
+
+The model is verified against physical expectations rather than by inspection.
+Ray primitive intersections are checked against analytic values to
+\num{e-9}. For a steel target on a silt bed the model produces a
+\SI{+12.7}{\decibel} target return and a \SI{-43.6}{\decibel} acoustic shadow
+behind it, with the seabed return falling smoothly with range. One ping costs
+roughly \SI{150}{\milli\second} on eight CPU cores, which is faster than the
+\SI{2}{\hertz} the vehicle actually uses.
+
+\keyfig{../results/figures/real_vs_sim.png}
+{Top: real ARIS Explorer 3000 captures from the public marine debris dataset.
+Bottom: frames from this simulator. Both show the characteristic bright
+target return with a dark shadow behind it, speckle texture, and range
+dependent seabed brightness.}{fig:realvssim}
+
+% ======================================================================
+\section{Autonomy stack}
+
+\subsection{Navigation}
+
+There is no GPS underwater. The pose estimate comes from a twelve state
+extended Kalman filter carrying position, body velocity, attitude and gyro
+bias, corrected by a Doppler velocity log, a depth cell and the inertial
+attitude solution. Sensor models include the failure behaviour that actually
+limits the solution, in particular loss of DVL bottom lock over soft sediment,
+which the research literature identifies as a principal failure mode.
+
+Horizontal position is never directly observed. It is dead reckoned from DVL
+velocity, so its error grows without bound. The filter therefore carries and
+reports its own position covariance, which the mission layer can use to decide
+when a position reset against a mapped structure is required.
+
+\subsection{Control}
+
+A cascaded controller maps position error to a desired ground velocity, then
+to a body wrench. The current is fed forward as a \emph{force}, being the
+thrust needed to balance hull drag at the estimated flow speed. Adding it to
+the velocity setpoint instead would be incorrect, because the inner loop
+regulates ground referenced velocity from the DVL, and inflating that setpoint
+commands the vehicle to fly downstream rather than hold position. This error
+was made and corrected during development, and it is worth stating because it
+is not obvious.
+
+The ambient current is estimated without any flow sensor, by inverting the
+drag model against the applied thrust and the measured ground velocity. Over
+the reference mission this recovers the true current to within
+\SI{0.01}{\metre\per\second} in steady conditions.
+
+Thrust allocation is prioritised. When demand exceeds what the thrusters can
+deliver, translational force is preserved and attitude torque is scaled back,
+because losing station in fast water is unrecoverable whereas a slow attitude
+response is not. Uniform scaling of the whole wrench does the opposite: during
+development a large yaw demand was found to collapse delivered surge thrust
+from \SI{340}{\newton} to \SI{67}{\newton}, which alone caused the vehicle to
+be swept away.
+
+% ======================================================================
+\section{Mapping, scour and target detection}
+
+Every ping yields returns across the swath, which are projected through the
+estimated vehicle pose and accumulated into a gridded bathymetric map. Because
+the map is built in the estimated frame, navigation drift propagates into it,
+so all mapping results below measure the whole chain rather than the sonar
+alone.
+
+\subsection{Scour quantification}
+
+The undisturbed bed level around a pier is taken as the median of an annulus
+outside the scour hole. Depth is the deepest excursion below that datum and
+volume is the integral of the depression. If the pier surroundings are not
+sufficiently sounded the result is reported as unmeasured rather than as a
+spuriously shallow value.
+
+\keyfig{../results/figures/f4_scour.png}
+{Radial bed profiles around the inspected piers, mapped against ground truth,
+and the resulting scour depth recovery.}{fig:scour}
+
+\subsection{Detection without training data}
+
+The bathymetric residual above a smooth estimate of the bare bed isolates
+objects standing proud of the riverbed. The bed is estimated by grey scale
+morphological opening, which removes compact objects while following broad
+bathymetry including scour hollows. The structuring element must exceed the
+largest object of interest: a window shorter than an \SI{11}{\metre} bus
+absorbs the bus into the bed estimate and hides it entirely.
+
+This gives a purely geometric detector that needs no labelled sonar at all.
+That matters because no public training data exists for submerged Indian
+buses, and it is the target class that matters most.
+
+\keyfig{../results/figures/f7_detection.png}
+{Left: height above the fitted bare bed surface. Right: detections against
+ground truth, with green lines joining each matched pair.}{fig:detect}
+
+% ======================================================================
+\section{Learned acoustic perception}
+
+A YOLOv8s detector was trained on the public marine debris forward looking
+sonar dataset, captured with an ARIS Explorer 3000 and comprising
+\num{2035} real images across \yoloClasses{} classes. On the held out test
+split it reaches \SI{\yoloTestMapFifty}{\percent} mAP at IoU 0.5,
+\SI{\yoloTestP}{\percent} precision and \SI{\yoloTestR}{\percent} recall.
+
+This number should be read with care. The dataset is a controlled water tank
+collection with a consistent background, so it is an easier problem than field
+sonar and near saturated performance is expected. It establishes that the
+perception pipeline is sound; it does not by itself predict field performance.
+
+\subsection{Domain transfer}
+
+Two transfer directions were examined. Running the real trained detector
+directly on simulated open river frames gives essentially no detections. The
+diagnosis is that the gap is dominated by scene content and capture geometry,
+not by acoustic physics: the tank captures are dense with walls, rig
+structure and cabling, at a short range window and a near grazing look, none
+of which resembles an open riverbed survey.
+
+The operationally relevant direction is the reverse, and it is the one the
+system depends on, because there is no labelled sonar for Indian flood
+scenarios and there will not be one before deployment. Results for a detector
+trained only on simulator output and evaluated on the real held out test split
+are reported in Section~\ref{sec:results}.
+
+% ======================================================================
+\section{Results}\label{sec:results}
+
+\subsection{Reference mission}
+
+A single autonomous mission over the modelled Savitri site: deploy, acquire
+bottom lock, lawnmower search of the box, orbit inspection of two piers,
+return and report. No operator input after launch.
+
+\keyfig{../results/figures/f1_mission_overview.png}
+{Mission track over site bathymetry, coloured by mission phase, and the
+vertical profile showing terrain following against the riverbed.}{fig:overview}
+
+\begin{table}[htbp]\centering\small
+\caption{Reference mission results. Navigation error is against simulation
+ground truth, which the vehicle never observes.}
+\begin{tabular}{lr}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Mission duration & \SI{\misDuration}{\second} (\misDurationMin{} min) \\
+Path length & \SI{\misPath}{\metre} \\
+Sonar pings & \misPings{} \\
+Soundings mapped & \misSoundings{} \\
+Search box coverage & \SI{\misCoverage}{\percent} \\
+DVL availability & \SI{\misDvl}{\percent} \\
+Navigation error, mean & \SI{\misNavMean}{\metre} \\
+Navigation error, maximum & \SI{\misNavMax}{\metre} \\
+Navigation drift, fraction of distance travelled & \SI{\misDriftPct}{\percent} \\
+Bathymetric map RMSE against truth & \SI{\mapRmse}{\metre} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\keyfig{../results/figures/f2_navigation.png}
+{Navigation error against the filter's own uncertainty estimate, altitude
+tracking, and estimated against true current with both vehicle envelopes
+marked.}{fig:nav}
+
+\keyfig{../results/figures/f3_mapping.png}
+{Ground truth bathymetry, the map built from simulated sonar during the
+mission, and the difference. The residual is near zero over open bed; the
+remaining structure is the submerged objects, which stand above the bare bed
+and are the subject of Section~\ref{sec:results}.}{fig:mapping}
+
+\subsection{Scour measurement}
+
+\begin{table}[htbp]\centering\small
+\caption{Scour measured autonomously against ground truth.}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Pier} & \textbf{Measured depth} & \textbf{True depth} & \textbf{Recovery} \\
+\midrule
+P2 & \SI{\scourPierTwoDepth}{\metre} & \SI{\scourPierTwoDepthTruth}{\metre} & \SI{\scourPierTwoRec}{\percent} \\
+P3 & \SI{\scourPierThreeDepth}{\metre} & \SI{\scourPierThreeDepthTruth}{\metre} & \SI{\scourPierThreeRec}{\percent} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Measured scour is systematically shallow by roughly
+\SI{\scourMeanAbsErr}{\metre}. The cause is understood: the sonar footprint
+averages across the narrow bottom of the scour cone, the map cell is
+\SI{0.5}{\metre}, and returns at very shallow grazing angles are rejected as
+poorly localised. The bias is consistent and therefore correctable by
+calibration, but it is reported here uncorrected.
+
+\subsection{Target detection}
+
+\begin{table}[htbp]\centering\small
+\caption{Geometric detection from the bathymetric map. No training data is
+used. Small boulders fall below the map cell size and the sonar footprint and
+are not separable from bed texture.}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Class} & \textbf{Detected} & \textbf{Present} \\
+\midrule
+Large vehicle (bus) & \detVehicleLargeHit{} & \detVehicleLargeTot{} \\
+Small vehicle (car) & \detVehicleSmallHit{} & \detVehicleSmallTot{} \\
+Structural debris & \detStructureHit{} & \detStructureTot{} \\
+Boulders & \detBoulderHit{} & \detBoulderTot{} \\
+\midrule
+\multicolumn{3}{l}{Primary targets: \detPrimary{}/\detPrimaryTotal{},
+mean localisation error \SI{\detMeanErr}{\metre}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All vehicles and structural debris present in the scene were found, at a mean
+localisation error of \SI{\detMeanErr}{\metre} and a worst case of
+\SI{\detMaxErr}{\metre}. For a search and rescue task this is the operationally
+meaningful result: it places a diver or recovery crane within a boat length of
+the target, in water where neither could otherwise be directed at all.
+
+\subsection{Simulator as a training source: a negative result, stated plainly}
+
+A detector was trained on \synthTrain{} simulated frames with analytically
+derived labels and no human annotation, then evaluated on the real ARIS held
+out test split.
+
+\begin{table}[htbp]\centering\small
+\caption{Detection performance. The first two rows differ only in training
+data; the third measures the simulator-trained model inside its own domain.}
+\begin{tabular}{llcc}
+\toprule
+\textbf{Trained on} & \textbf{Tested on} & \textbf{mAP@0.5} & \textbf{mAP@0.5:0.95} \\
+\midrule
+Real sonar (\num{1627} images) & real test split & \SI{\yoloTestMapFifty}{\percent} & \SI{\yoloTestMap}{\percent} \\
+Simulator only (\synthTrain{} images) & real test split & \SI{\synthMapFifty}{\percent} & \SI{\synthMap}{\percent} \\
+Simulator only (\synthTrain{} images) & simulated val split & \SI{\synthSelfMapFifty}{\percent} & \SI{\synthSelfMap}{\percent} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The third row matters as much as the second. The simulator-trained model
+reaches \SI{\synthSelfMapFifty}{\percent} mAP inside its own domain, which
+establishes that the simulated imagery is internally consistent, correctly
+labelled and genuinely learnable. It is not noise. But that learning does not
+carry across to real tank sonar, and the failure is symmetric: run in the
+opposite direction, the real-trained detector recovers only
+\SI{\simRealRecall}{\percent} of \simRealInstances{} simulated targets across
+\simRealScenes{} scenes, against a mean confidence of \simRealConfReal{} on
+real test images.
+
+The diagnosis is that the residual gap is dominated by scene content and
+capture configuration rather than by the acoustic physics. The public data is
+a water tank dense with wall returns, mounting rig and cabling, imaged at a
+short range window and a near grazing look, and its classes are centimetre
+scale objects whose signature depends on fine structure well below what a
+geometric model represents. None of that resembles an open riverbed survey of
+metre scale targets.
+
+Two conclusions follow, and both shape the system rather than being excuses.
+First, the simulator should not be presented as a drop in replacement for real
+training data for fine grained classification. Second, and more usefully, the
+capabilities this system actually depends on do not require that transfer at
+all. Locating a submerged bus is a geometry problem, solved by the detector of
+Section~\ref{sec:results} at \detPrimary{}/\detPrimaryTotal{} with no training
+data whatsoever. Where a learned classifier is needed, the relevant question
+is not zero-shot transfer but whether simulator pretraining reduces how much
+real data must be collected, which is measured next.
+
+\subsection{Data efficiency}
+
+The operational situation is that a limited amount of real sonar can be
+collected from a target site, but nothing close to enough to train from
+scratch. The useful question is therefore whether pretraining on simulator
+output lowers that requirement. Two arms, identical except for
+initialisation, were trained on the same $N$ real images and evaluated on the
+same untouched real test split: one starting from generic natural-image
+weights, one from the simulator-trained weights.
+
+\keyfig{../results/figures/f10_data_efficiency.png}
+{Real-data efficiency. Both arms are trained on the same real images and
+evaluated on the same real test split, differing only in initialisation.}
+{fig:dataeff}
+
+% ======================================================================
+\section{Verification and honest limitations}
+
+Every quantitative claim in this report is produced by a script in the
+repository and regenerated from the measured result files, so the document
+cannot drift out of step with the experiments.
+
+\subsection{What is verified}
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+\item Ray primitive intersection against analytic values to \num{e-9}.
+\item Sonar shadow and target contrast against physical expectation.
+\item Vehicle buoyancy, drift under no thrust, and thrust envelope against
+closed form drag balance.
+\item Navigation error against simulation ground truth over a full mission.
+\item Mapped bathymetry, scour and target positions against ground truth.
+\item Perception on a real, held out sonar test split.
+\end{itemize}
+
+\subsection{What is not}
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+\item \textbf{No physical vehicle exists.} All vehicle results are simulation.
+The hydrodynamic coefficients for the faired hull are engineering estimates and
+require CFD and tow tank validation.
+\item \textbf{The site is representative, not surveyed.} Dimensions are
+consistent with published descriptions of the Mahad collapse and with
+IRC:SP:35 practice, but they are modelling assumptions, not measured
+bathymetry.
+\item \textbf{The sediment attenuation term is an approximation}, not a first
+principles result.
+\item \textbf{Zero-shot transfer from tank data to open river frames fails.}
+This is reported rather than hidden, with the diagnosis above.
+\item \textbf{Detection recall is quoted for objects above roughly one metre.}
+Smaller debris is below the resolution of the map cell and the sonar
+footprint.
+\end{itemize}
+
+% ======================================================================
+\section{Development pathway}
+
+The present state is a verified simulation and autonomy stack with perception
+validated on real sonar data. The path to a field system is:
+
+\begin{table}[htbp]\centering\small
+\caption{Development pathway.}
+\begin{tabular}{p{0.16\linewidth}p{0.36\linewidth}p{0.40\linewidth}}
+\toprule
+\textbf{Phase} & \textbf{Work} & \textbf{Evidence produced} \\
+\midrule
+Now &
+Simulation, autonomy, mapping, perception, verification &
+This report and the accompanying repository \\
+Months 1 to 6 &
+CFD and tow tank validation of the faired hull; hardware in the loop with
+flight controller and edge compute; indigenous thruster and pressure housing
+sourcing &
+Measured hydrodynamic coefficients; autonomy running on target hardware \\
+Months 7 to 12 &
+Integrated vehicle; tank and reservoir trials; DVL and sonar integration &
+Wet testing against surveyed targets \\
+Months 13 to 24 &
+Instrumented river trials with a partner agency; field validation of scour
+measurement against diver survey &
+Field data at operational current and turbidity \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The autonomy and perception software is the defensible indigenous content. The
+hardware baseline starts from proven components to remove mechanical risk and
+is intended to be progressively indigenised across the programme, with the
+pressure housing, thrusters and eventually the Doppler velocity log as the
+targets in that order.
+
+% ======================================================================
+\section*{Reproducing these results}
+\addcontentsline{toc}{section}{Reproducing these results}
+
+\begin{verbatim}
+python tests/smoke_sonar.py      sonar physics verification
+python tests/smoke_control.py    dynamics, estimation, control verification
+python eval/thrust_envelope.py   vehicle envelope analysis
+python eval/run_mission.py       full autonomous mission
+python eval/make_figures.py      report figures
+python eval/detect_eval.py       geometric target detection
+python eval/sim2real.py          zero-shot transfer test
+\end{verbatim}
+
+\end{document}

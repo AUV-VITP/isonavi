@@ -163,6 +163,8 @@ class DisasterSite:
             self.scene.add(Box([bx, by, bz + s * 0.5], [s, s * 0.8, s * 0.5],
                                MAT_INDEX["rubble"], yaw=self.rng.uniform(0, np.pi),
                                name=f"rubble_{k}"))
+            self._register(f"rubble_{k}", "debris", (bx, by, bz + s * 0.5),
+                           (2 * s, 1.6 * s, s))
 
         # The two state transport buses, swept downstream of the failed span.
         bus_specs = [(21.0, 6.5, np.radians(-28.0)), (34.0, -9.0, np.radians(64.0))]
@@ -191,6 +193,8 @@ class DisasterSite:
             bz = float(self.bed_height(bx, by)) + r * 0.6
             self.scene.add(Sphere([bx, by, bz], r, MAT_INDEX["gravel"],
                                   name=f"boulder_{k}"))
+            self._register(f"boulder_{k}", "boulder", (bx, by, bz),
+                           (2 * r, 2 * r, 2 * r))
 
     def _register(self, name, cls, centre, size):
         self.targets[name] = {"class": cls, "centre": np.array(centre, float),
