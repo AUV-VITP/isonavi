@@ -20,7 +20,7 @@ from varuna.scene import DisasterSite
 from varuna.mapping import (BathymetryMap, detect_objects_from_residual,
                             match_detections)
 
-ROOT = os.path.expanduser("~/dev/rakshatech")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIG, LOG = f"{ROOT}/results/figures", f"{ROOT}/results/logs"
 plt.rcParams.update({"figure.dpi": 130, "savefig.dpi": 145, "font.size": 9,
                      "axes.grid": True, "grid.alpha": 0.25,

@@ -10,9 +10,9 @@ import os
 
 import numpy as np
 
-ROOT = os.path.expanduser("~/dev/rakshatech")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOG = f"{ROOT}/results/logs"
-DOCS = f"{ROOT}/docs"
+DOCS = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "docs")
 os.makedirs(DOCS, exist_ok=True)
 
 

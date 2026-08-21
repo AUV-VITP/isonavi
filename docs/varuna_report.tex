@@ -121,7 +121,7 @@ In the system described here it falls out of a routine survey automatically,
 which converts an occasional, hazardous, qualitative inspection into a
 repeatable quantitative measurement.
 
-\keyfig{../results/figures/f0_architecture.png}
+\keyfig{../simulation/results/figures/f0_architecture.png}
 {System architecture. The vehicle acts only on estimated quantities; ground
 truth is used solely to score the result afterwards.}{fig:arch}
 
@@ -141,7 +141,7 @@ station against. For the open frame baseline this is
 \SI{\siteCurrent}{\metre\per\second} at the surface. The vehicle is swept away,
 and no controller can prevent it.
 
-\keyfig{../results/figures/f5_vehicle.png}
+\keyfig{../simulation/results/figures/f5_vehicle.png}
 {Left: surge drag against current speed for both vehicles, with the saturated
 thrust limit of each. The intersection is the maximum holdable current. The
 open frame baseline is out of envelope at the design condition by a factor of
@@ -234,7 +234,7 @@ rays per beam and summing them under the vertical beam pattern.
 so intensity is Gamma distributed with shape equal to the number of looks.
 \end{enumerate}
 
-\keyfig{../results/figures/f0b_sonar_pipeline.png}
+\keyfig{../simulation/results/figures/f0b_sonar_pipeline.png}
 {Sonar image formation. Every stage is a physical effect rather than a
 rendering convenience.}{fig:pipeline}
 
@@ -263,7 +263,7 @@ behind it, with the seabed return falling smoothly with range. One ping costs
 roughly \SI{150}{\milli\second} on eight CPU cores, which is faster than the
 \SI{2}{\hertz} the vehicle actually uses.
 
-\keyfig{../results/figures/real_vs_sim.png}
+\keyfig{../simulation/results/figures/real_vs_sim.png}
 {Top: real ARIS Explorer 3000 captures from the public marine debris dataset.
 Bottom: frames from this simulator. Both show the characteristic bright
 target return with a dark shadow behind it, speckle texture, and range
@@ -327,7 +327,7 @@ volume is the integral of the depression. If the pier surroundings are not
 sufficiently sounded the result is reported as unmeasured rather than as a
 spuriously shallow value.
 
-\keyfig{../results/figures/f4_scour.png}
+\keyfig{../simulation/results/figures/f4_scour.png}
 {Radial bed profiles around the inspected piers, mapped against ground truth,
 and the resulting scour depth recovery.}{fig:scour}
 
@@ -344,7 +344,7 @@ This gives a purely geometric detector that needs no labelled sonar at all.
 That matters because no public training data exists for submerged Indian
 buses, and it is the target class that matters most.
 
-\keyfig{../results/figures/f7_detection.png}
+\keyfig{../simulation/results/figures/f7_detection.png}
 {Left: height above the fitted bare bed surface. Right: detections against
 ground truth, with green lines joining each matched pair.}{fig:detect}
 
@@ -386,7 +386,7 @@ A single autonomous mission over the modelled Savitri site: deploy, acquire
 bottom lock, lawnmower search of the box, orbit inspection of two piers,
 return and report. No operator input after launch.
 
-\keyfig{../results/figures/f1_mission_overview.png}
+\keyfig{../simulation/results/figures/f1_mission_overview.png}
 {Mission track over site bathymetry, coloured by mission phase, and the
 vertical profile showing terrain following against the riverbed.}{fig:overview}
 
@@ -411,12 +411,12 @@ Bathymetric map RMSE against truth & \SI{\mapRmse}{\metre} \\
 \end{tabular}
 \end{table}
 
-\keyfig{../results/figures/f2_navigation.png}
+\keyfig{../simulation/results/figures/f2_navigation.png}
 {Navigation error against the filter's own uncertainty estimate, altitude
 tracking, and estimated against true current with both vehicle envelopes
 marked.}{fig:nav}
 
-\keyfig{../results/figures/f3_mapping.png}
+\keyfig{../simulation/results/figures/f3_mapping.png}
 {Ground truth bathymetry, the map built from simulated sonar during the
 mission, and the difference. The residual is near zero over open bed; the
 remaining structure is the submerged objects, which stand above the bare bed
@@ -530,7 +530,7 @@ for initialisation, were trained on the same $N$ real images and evaluated on
 the same untouched real test split: one starting from generic natural-image
 weights, one from the simulator-trained weights.
 
-\keyfig{../results/figures/f10_data_efficiency.png}
+\keyfig{../simulation/results/figures/f10_data_efficiency.png}
 {Real-data efficiency. Both arms are trained on the same real images and
 evaluated on the same real test split, differing only in initialisation.
 Simulator pretraining is worse at every size except the largest.}
@@ -608,7 +608,7 @@ All primary targets found & \repAllTargets{}/\repRuns{} \\
 \end{tabular}
 \end{table}
 
-\keyfig{../results/figures/f11_repeatability.png}
+\keyfig{../simulation/results/figures/f11_repeatability.png}
 {Per-seed results with the mean marked. The spread, not the best run, is the
 honest statement of what the system does.}{fig:repeat}
 

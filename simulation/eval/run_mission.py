@@ -11,7 +11,7 @@ from varuna.mission import MissionRunner, MissionConfig
 from varuna.dynamics import BLUEROV2_HEAVY, VARUNA_1, max_holdable_current
 from varuna.control import VARUNA_GAINS, ControlGains
 
-OUT = os.path.expanduser("~/dev/rakshatech/results")
+OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results")
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--seed", type=int, default=1)

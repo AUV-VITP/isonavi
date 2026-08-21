@@ -6,7 +6,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
 
-FIG = os.path.expanduser("~/dev/rakshatech/results/figures")
+FIG = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results", "figures")
 os.makedirs(FIG, exist_ok=True)
 
 INK = "#0d1117"

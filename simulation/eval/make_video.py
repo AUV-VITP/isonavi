@@ -26,7 +26,7 @@ from varuna.scene import DisasterSite
 from varuna.acoustics import ForwardLookingSonar, preset
 from varuna.mapping import BathymetryMap
 
-ROOT = os.path.expanduser("~/dev/rakshatech")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOG, VID = f"{ROOT}/results/logs", f"{ROOT}/results/video"
 os.makedirs(VID, exist_ok=True)
 

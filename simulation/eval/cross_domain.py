@@ -17,7 +17,7 @@ import os
 
 import numpy as np
 
-ROOT = os.path.expanduser("~/dev/rakshatech")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOG = f"{ROOT}/results/logs"
 SYNTH = os.path.expanduser("~/dev/datasets/fls_synth")
 REAL = os.path.expanduser("~/dev/datasets/fls_sonar/Sonar_Dataset")

@@ -42,16 +42,16 @@ Measured against simulation ground truth the vehicle never observes, across
 
 | Module | Purpose |
 | --- | --- |
-| `varuna/geometry.py` | Vectorised ray casting: analytic primitives and a bathymetric heightfield |
-| `varuna/acoustics.py` | Physics-based forward-looking sonar image formation |
-| `varuna/scene.py` | Post-collapse river site, bathymetry, scour, current field |
-| `varuna/validation.py` | Water-tank scenes and labelled synthetic frame generation |
-| `varuna/dynamics.py` | 6-DOF Fossen dynamics, added mass, fins, thruster allocation |
-| `varuna/sensors.py` | DVL, IMU, depth cell error models including bottom-lock loss |
-| `varuna/estimation.py` | 12-state EKF for GPS-denied navigation |
-| `varuna/control.py` | Cascaded pose control, force feedforward, current estimation |
-| `varuna/mapping.py` | Bathymetric mapping, scour quantification, target detection |
-| `varuna/mission.py` | Mission state machine and the closed simulation loop |
+| `simulation/varuna/geometry.py` | Vectorised ray casting: analytic primitives and a bathymetric heightfield |
+| `simulation/varuna/acoustics.py` | Physics-based forward-looking sonar image formation |
+| `simulation/varuna/scene.py` | Post-collapse river site, bathymetry, scour, current field |
+| `simulation/varuna/validation.py` | Water-tank scenes and labelled synthetic frame generation |
+| `simulation/varuna/dynamics.py` | 6-DOF Fossen dynamics, added mass, fins, thruster allocation |
+| `simulation/varuna/sensors.py` | DVL, IMU, depth cell error models including bottom-lock loss |
+| `simulation/varuna/estimation.py` | 12-state EKF for GPS-denied navigation |
+| `simulation/varuna/control.py` | Cascaded pose control, force feedforward, current estimation |
+| `simulation/varuna/mapping.py` | Bathymetric mapping, scour quantification, target detection |
+| `simulation/varuna/mission.py` | Mission state machine and the closed simulation loop |
 
 ## Sonar model
 
@@ -113,6 +113,7 @@ supplying training data for fine-grained classification.
 ## Running it
 
 ```bash
+cd simulation
 source ~/dev/venvs/ml/bin/activate
 PYTHONPATH=. python tests/smoke_sonar.py      # sonar physics verification
 PYTHONPATH=. python tests/smoke_control.py    # dynamics, EKF, control
@@ -124,11 +125,11 @@ PYTHONPATH=. python eval/detect_eval.py       # geometric target detection
 PYTHONPATH=. python eval/cross_domain.py      # symmetric transfer evaluation
 PYTHONPATH=. python eval/arch_figure.py       # architecture diagrams
 PYTHONPATH=. python eval/make_video.py        # operator console video
-cd docs && pdflatex varuna_report.tex         # technical report
+cd ../docs && pdflatex varuna_report.tex      # technical report
 ```
 
-GPU training runs as Kaggle kernels in `ml/kaggle/`. Every number in the report
-is emitted by `eval/make_metrics_tex.py` from the measured result files, so the
+GPU training runs as Kaggle kernels in `simulation/ml/kaggle/`. Every number in the report
+is emitted by `simulation/eval/make_metrics_tex.py` from the measured result files, so the
 document cannot drift out of step with the experiments.
 
 ## Status
