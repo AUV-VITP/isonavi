@@ -18,3 +18,6 @@ docs/*.aux
 docs/*.log
 docs/*.out
 docs/*.toc
+
+# CAD meshes are regenerable from varuna_cad.py; keep STEP + params only.
+cad/*.stl

@@ -1,0 +1,13 @@
+{
+ "ticks": 17896,
+ "sim_time": 894.7999999997339,
+ "wall_time": 663.6699927270001,
+ "realtime_factor": 1.3482604454105684,
+ "nav_error_mean": 0.13139827770340484,
+ "nav_error_max": 0.2557791663514018,
+ "nav_error_final": 0.23998779953366192,
+ "thrust_peak_mean": 107.5194641649228,
+ "crc_errors": 0,
+ "resyncs": 0,
+ "final_phase": 7
+}

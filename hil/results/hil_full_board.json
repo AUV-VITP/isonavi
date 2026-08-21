@@ -1,0 +1,14 @@
+{
+ "ticks": 17896,
+ "sim_time": 894.7999999997339,
+ "phase": "DONE",
+ "loop_ms_mean": 37.50430358739522,
+ "loop_ms_p99": 40.33985800008394,
+ "loop_ms_max": 82.91931999974622,
+ "compute_ms_mean": 30.357433620920123,
+ "compute_ms_p99": 32.33740200032571,
+ "wait_ms_mean": 7.146869966475106,
+ "budget_ms": 50.0,
+ "esp_crc_errors": 0,
+ "host_crc_errors": 0
+}
