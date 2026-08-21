@@ -1,0 +1,47 @@
+{
+  "macro_f1": 0.542948454252922,
+  "per_class": {
+    "normal": {
+      "precision": 0.9605005276647067,
+      "recall": 0.9088445078459344,
+      "f1": 0.9339588067140658,
+      "support": 7010
+    },
+    "damaged": {
+      "precision": 0.6162162162162163,
+      "recall": 0.796583850931677,
+      "f1": 0.6948865560447003,
+      "support": 1288
+    },
+    "unknown": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+    }
+  },
+  "confusion_matrix": {
+    "labels": [
+      "normal",
+      "damaged",
+      "unknown"
+    ],
+    "matrix": [
+      [
+        6371,
+        639,
+        0
+      ],
+      [
+        262,
+        1026,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ]
+    ]
+  }
+}
