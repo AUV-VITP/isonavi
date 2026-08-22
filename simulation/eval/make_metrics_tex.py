@@ -150,6 +150,38 @@ else:
               "synthSelfMapFifty", "synthSelfMap"):
         cmd(n, None)
 
+# ---------------------------------------------------------------- hardware in the loop
+hil = load("hil_metrics.json", None)
+if hil:
+    cmd("hilNavMean", hil.get("hil_nav_mean"), "{:.3f}")
+    cmd("hilNavMax", hil.get("hil_nav_max"), "{:.3f}")
+    cmd("hilTicks", hil.get("hil_ticks"), "{:,}")
+    cmd("hilSimTime", hil.get("hil_sim_time"), "{:.0f}")
+    cmd("hilCrc", hil.get("hil_crc"), "{}")
+    cmd("boardComputeMean", hil.get("board_compute_mean"), "{:.1f}")
+    cmd("boardComputeNn", hil.get("board_compute_p99"), "{:.1f}")
+    cmd("boardWaitMean", hil.get("board_wait_mean"), "{:.1f}")
+    cmd("boardBudget", hil.get("board_budget"), "{:.0f}")
+    cmd("boardMargin", hil.get("board_margin"), "{:.1f}")
+else:
+    for n in ("hilNavMean", "hilNavMax", "hilTicks", "hilSimTime", "hilCrc",
+              "boardComputeMean", "boardComputeNn", "boardWaitMean",
+              "boardBudget", "boardMargin"):
+        cmd(n, None)
+
+# ---------------------------------------------------------------- vehicle cad
+import json as _json
+_cadp = os.path.expanduser("~/dev/rakshatech/cad/varuna_cad_params.json")
+cad = _json.load(open(_cadp)) if os.path.exists(_cadp) else None
+if cad:
+    cmd("cadLength", cad.get("hull_length_mm"), "{:.0f}")
+    cmd("cadDia", cad.get("hull_diameter_mm"), "{:.0f}")
+    cmd("cadVolErr", abs(cad.get("volume_error_pct", 0)), "{:.2f}")
+    cmd("cadVolume", cad.get("displaced_volume_m3"), "{:.4f}")
+else:
+    for n in ("cadLength", "cadDia", "cadVolErr", "cadVolume"):
+        cmd(n, None)
+
 # ---------------------------------------------------------------- cross domain
 xd = load("cross_domain_metrics.json", None)
 if xd:
