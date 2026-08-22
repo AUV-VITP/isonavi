@@ -27,6 +27,11 @@
   "mean": 86.10358597129037,
   "std": 0.08423792053442103
  },
+ "contacts_per_run": 24.4,
+ "false_alarms_per_run": 15.4,
+ "false_alarms_std": 1.4966629547095764,
+ "false_alarms_per_hectare": 10.0,
+ "survey_area_ha": 1.54,
  "missions_completed": 5,
  "runs": 5,
  "all_targets_found": 3,
@@ -43,7 +48,10 @@
    "det_total": 4,
    "det_err": 2.149573893582584,
    "scour_rec": 86.11766725316127,
-   "completed": true
+   "completed": true,
+   "n_det": 26,
+   "on_object": 9,
+   "false_alarms": 17
   },
   {
    "seed": 2,
@@ -57,7 +65,10 @@
    "det_total": 4,
    "det_err": 1.1659055970954286,
    "scour_rec": 86.12092354615362,
-   "completed": true
+   "completed": true,
+   "n_det": 26,
+   "on_object": 9,
+   "false_alarms": 17
   },
   {
    "seed": 3,
@@ -71,7 +82,10 @@
    "det_total": 4,
    "det_err": 2.295848316119218,
    "scour_rec": 86.2197223906482,
-   "completed": true
+   "completed": true,
+   "n_det": 21,
+   "on_object": 8,
+   "false_alarms": 13
   },
   {
    "seed": 4,
@@ -85,7 +99,10 @@
    "det_total": 4,
    "det_err": 1.7063812059364087,
    "scour_rec": 86.10263454633426,
-   "completed": true
+   "completed": true,
+   "n_det": 24,
+   "on_object": 9,
+   "false_alarms": 15
   },
   {
    "seed": 5,
@@ -99,7 +116,10 @@
    "det_total": 4,
    "det_err": 1.7066813641549508,
    "scour_rec": 85.95698212015458,
-   "completed": true
+   "completed": true,
+   "n_det": 25,
+   "on_object": 10,
+   "false_alarms": 15
   }
  ]
 }

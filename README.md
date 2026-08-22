@@ -38,6 +38,8 @@ Measured against simulation ground truth the vehicle never observes, across
 | Primary targets found, no training data | 4/4 in 4 of 5 runs, 1.79 +/- 0.37 m |
 | Sonar detector on real ARIS test split | 99.0 % mAP@0.5 |
 | Full mission on RISC-V flight computer | nav error 0.131 m, DONE, 0 CRC errors |
+| Vehicle mass and stability budget | closes at 28.000 kg, 0.02820 m3, level trim |
+| Detection, primary targets | both vehicles every run; 15.4 false contacts per run |
 | Board compute per tick | 30.4 ms mean vs 50 ms budget (1.5x margin) |
 
 ## What is here
@@ -125,10 +127,23 @@ reproducing the pure-simulation result, with 30.4 ms compute per tick against a
 
 ## Vehicle CAD
 
-`cad/varuna_cad.py` builds the vehicle parametrically from the simulation
-parameters. The Myring hull displaces exactly the simulated 0.0282 m3 (matched
-to 0.01 percent) and the eight thruster positions come from the allocation
-arms, so the drawing is the vehicle that was simulated. See `cad/`.
+`cad/varuna_layout.py` lists every component the vehicle carries with a real
+mass at a real station, then solves the hull size, the trim ballast mass and
+the ballast station so that displaced volume, dry mass and level trim all match
+the simulation. The budget closes exactly: 28.000 kg, 0.02820 m3, trim 0.000
+mm, and +1.96 N net buoyancy so the vehicle surfaces on a power failure.
+`cad/varuna_cad.py` then builds the geometry from that layout, and reports the
+volume of the hull it actually built against the volume it was asked for, which
+closes to 0.003 percent.
+
+Because the layout is solved rather than chosen, the stability margin is a
+prediction. It came out at 27.3 mm, against the 85 mm the dynamics model had
+assumed. 85 mm is not reachable in a 180 mm hull, so the simulation was
+corrected and the whole mission and repeatability suite re-run. The results
+barely move, because the fins supply roughly fifty times the restoring moment
+the buoyancy offset does at survey speed. The CAD is what caught the error.
+
+See `cad/`.
 
 ## Running it
 

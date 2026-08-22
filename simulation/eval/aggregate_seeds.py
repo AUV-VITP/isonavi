@@ -54,6 +54,13 @@ for f in sorted(glob.glob(f"{LOG}/mission_varuna_s*.json")):
     m, miss, fp = match_detections(dets, PRIMARY, gate=5.0)
     errs = [x["error"] for x in m]
 
+    # Recall against the primary targets is only half the picture. The
+    # detector flags any bed anomaly above its height threshold, so the honest
+    # figure is how many contacts it raises that correspond to nothing in the
+    # scene at all. Matching against every object, boulders and debris
+    # included, separates real bed features from spurious returns.
+    m_any, _, fp_any = match_detections(dets, site.targets, gate=5.0)
+
     sc = s.get("scour", {}) or {}
     rec = [100 * v["max_depth"] / v["truth_depth"]
            for v in sc.values() if v and v.get("truth_depth")]
@@ -71,6 +78,9 @@ for f in sorted(glob.glob(f"{LOG}/mission_varuna_s*.json")):
         "det_err": float(np.mean(errs)) if errs else np.nan,
         "scour_rec": float(np.mean(rec)) if rec else np.nan,
         "completed": s["phases_reached"][-1] == "DONE",
+        "n_det": len(dets),
+        "on_object": len(m_any),
+        "false_alarms": len(fp_any),
     })
 
 if not runs:
@@ -113,6 +123,18 @@ n_done = sum(r["completed"] for r in runs)
 n_full = sum(r["detected"] == r["det_total"] for r in runs)
 print(f"  {'missions completed':24s} {n_done}/{len(runs)}")
 print(f"  {'all primary targets found':24s} {n_full}/{len(runs)}")
+fa = [r["false_alarms"] for r in runs]
+nd = [r["n_det"] for r in runs]
+area_ha = ((site.cfg.x_max - site.cfg.x_min)
+           * (site.cfg.y_max - site.cfg.y_min)) / 1e4
+print(f"  {'contacts raised per run':24s} {np.mean(nd):.1f}")
+print(f"  {'false alarms per run':24s} {np.mean(fa):.1f} +/- {np.std(fa):.1f}")
+print(f"  {'false alarms per hectare':24s} {np.mean(fa) / area_ha:.1f}")
+summary["contacts_per_run"] = float(np.mean(nd))
+summary["false_alarms_per_run"] = float(np.mean(fa))
+summary["false_alarms_std"] = float(np.std(fa))
+summary["false_alarms_per_hectare"] = float(np.mean(fa) / area_ha)
+summary["survey_area_ha"] = float(area_ha)
 summary["missions_completed"] = n_done
 summary["runs"] = len(runs)
 summary["all_targets_found"] = n_full

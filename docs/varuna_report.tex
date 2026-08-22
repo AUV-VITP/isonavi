@@ -69,9 +69,10 @@ station only to \SI{0.96}{\metre\per\second} against a design current of
 vehicle raises that envelope to \SI{\misEnvelope}{\metre\per\second} and
 completes a \SI{\misPath}{\metre} autonomous survey with a mean navigation
 error of \SI{\misNavMean}{\metre} without any external positioning. Third,
-submerged vehicles and structural debris are located from the resulting
-bathymetric map with no training data at all, at a mean localisation error of
-\SI{\detMeanErr}{\metre}. Finally, the complete mission was executed with the
+submerged vehicles are located from the resulting bathymetric map with no
+training data at all, at a mean localisation error of
+\SI{\repDetErrMean}{\metre}, reducing an unsearchable survey box to roughly
+\detContacts{} georeferenced contacts to dive. Finally, the complete mission was executed with the
 autonomy running on a RISC-V flight computer, reproducing the simulation result
 to within centimetres inside the real-time control budget, which moves the
 maturity claim from simulated to hardware-validated.
@@ -192,21 +193,98 @@ Station keeping at \SI{1.96}{\metre\per\second} & swept, \SI{14.0}{\metre} error
 
 The vehicle is defined parametrically from the same numbers the simulation
 uses, so the drawing is the vehicle that was simulated rather than an
-illustration. The hull is a Myring profile, the standard low-drag axisymmetric
-body for autonomous underwater vehicles: an elliptical nose, a parallel
-mid-body carrying the pressure housing, and a fined tail. The mid-body length
-is solved so the displaced volume equals the simulation value of
-\SI{\cadVolume}{\cubic\metre}; the built hull matches that to
-\SI{\cadVolErr}{\percent}, so the buoyancy in the drawing is consistent with
-the buoyancy in the physics. The eight thruster positions come directly from
-the allocation arms, and the aft fins are sized to the fin coefficient that
-makes the hull directionally stable. The result is
-\SI{\cadLength}{\milli\metre} long at \SI{\cadDia}{\milli\metre} diameter.
+illustration of one. The hull is a Myring profile, the standard low drag
+axisymmetric body for autonomous underwater vehicles: an elliptical nose, a
+parallel mid-body, and a fined tail. It is \SI{\cadLength}{\milli\metre} long
+on a \SI{\cadDia}{\milli\metre} diameter, a slenderness of \cadSlender{}.
 
-\keyfig{../cad/varuna_hero.png}
-{VARUNA-1 general arrangement, generated from the simulation parameters.
-Myring hull, four canted horizontal thrusters and four vertical thrusters on
-faired pylons, cruciform aft fins, forward sonar dome.}{fig:cad}
+The faired hull is itself the pressure boundary, as on survey vehicles of this
+class, rather than a free flooding fairing wrapped around a separate
+cylindrical housing. Two things forced that choice. A separate housing leaves
+the buoyancy to syntactic foam, and the foam volume required here does not fit
+in the annulus between a \SI{150}{\milli\metre} housing and the skin. Trimming
+that arrangement to a useful stability margin then needs ballast in a bulb
+below the hull, and a keel bulb is a snag hazard in exactly the debris field
+this vehicle exists to survey. With the hull as the pressure vessel the ballast
+sits inside on the keel line and nothing protrudes below the skin except the
+acoustics.
+
+\keyfig{../cad/varuna_dimensioned.png}
+{Principal dimensions. The hull form, the thruster stations and the
+\SI{45}{\degree} cant all come from the parameters the dynamics model uses.}
+{fig:cad-dim}
+
+\subsubsection{The mass and stability budget closes}
+
+Every component the vehicle carries is listed with a real mass at a real
+station, and three quantities are then solved rather than chosen: the hull
+size, so displaced volume equals the value the simulation uses for buoyancy;
+the trim ballast mass, so dry mass equals the simulated mass; and the ballast
+station, so the vehicle floats level.
+
+\begin{table}[htbp]\centering\small
+\caption{Mass budget by group. The solve closes on all three constraints
+simultaneously.}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Group} & \textbf{Mass (kg)} & \textbf{Share} \\
+\midrule
+Trim ballast & 9.03 & 32.3 \% \\
+Structure & 8.73 & 31.2 \% \\
+Power & 4.00 & 14.3 \% \\
+Propulsion & 2.72 & 9.7 \% \\
+Sensors & 2.22 & 7.9 \% \\
+Avionics & 1.30 & 4.6 \% \\
+\midrule
+Total & \cadMass{} & \\
+\midrule
+\multicolumn{3}{l}{Displaced volume \SI{\cadVolume}{\cubic\metre},
+net buoyancy \SI{\cadNetBuoy}{\newton} positive} \\
+\multicolumn{3}{l}{Longitudinal trim \SI{0.000}{\milli\metre},
+hull volume closes to \SI{\cadVolErr}{\percent}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Because those three are solved, everything else the layout produces is a
+prediction rather than a decoration. Net buoyancy comes out
+\SI{\cadNetBuoy}{\newton} positive, which is the right sign: the vehicle
+surfaces on a power failure rather than staying on the bed. The
+\SI{\cadBallast}{\kilo\gram} of trim ballast is also the payload growth margin,
+since at fixed displacement it can be traded for instrumentation without
+touching the hull.
+
+\keyfig{../cad/varuna_cutaway.png}
+{Internal arrangement on the centreline. Battery low and forward, electronics
+and speed controllers aft of it, trim ballast along the keel, sonar behind the
+acoustic window.}{fig:cad-cut}
+
+\subsubsection{What the budget caught}\label{sec:cad-budget}
+
+The separation between centre of buoyancy and centre of gravity sets the
+passive roll and pitch restoring moment. It is not a free parameter: it falls
+out of where the mass actually sits. The layout puts it at
+\SI{\cadBG}{\milli\metre}. The dynamics model had assumed
+\SI{\cadBGAssumed}{\milli\metre}.
+
+\SI{\cadBGAssumed}{\milli\metre} is not reachable in a hull this size. It
+requires the centre of gravity to sit \SI{15}{\milli\metre} off the bottom
+skin, which no arrangement of a battery and a pressure housing achieves. The
+figure was an estimate made before the vehicle had an internal layout, and it
+was optimistic by a factor of three.
+
+The simulation was corrected to the CAD value and the full mission and
+repeatability suite re-run. The results move very little, and the reason is
+worth stating because it is the same argument that justified the fins in the
+first place. At survey speed the restoring moment is dominated by the fins,
+which contribute \SI{440}{\newton\metre\per\radian} at \SI{2}{\metre\per\second}
+against \SI{7.5}{\newton\metre\per\radian} from the buoyancy offset. Correcting
+a term worth two percent of the total changes the net stabilising moment at
+speed by four percent. At hover the buoyancy term is all there is, and it
+halves, but it remains positive and the vehicle remains upright.
+
+This is the loop worth having. The error was real, it was in the direction of
+flattering the design, and the CAD is what caught it.
 
 \subsection{Consequences for the mission plan}
 
@@ -467,12 +545,12 @@ averages across the narrow bottom of the scour cone, the map cell is
 poorly localised. The bias is consistent and therefore correctable by
 calibration, but it is reported here uncorrected.
 
-\subsection{Target detection}
+\subsection{Target detection, and what it costs}
 
 \begin{table}[htbp]\centering\small
-\caption{Geometric detection from the bathymetric map. No training data is
-used. Small boulders fall below the map cell size and the sonar footprint and
-are not separable from bed texture.}
+\caption{Geometric detection from the bathymetric map, reference run. No
+training data is used. Small boulders fall below the map cell size and the
+sonar footprint and are not separable from bed texture.}
 \begin{tabular}{lcc}
 \toprule
 \textbf{Class} & \textbf{Detected} & \textbf{Present} \\
@@ -488,11 +566,52 @@ mean localisation error \SI{\detMeanErr}{\metre}} \\
 \end{tabular}
 \end{table}
 
-All vehicles and structural debris present in the scene were found, at a mean
-localisation error of \SI{\detMeanErr}{\metre} and a worst case of
-\SI{\detMaxErr}{\metre}. For a search and rescue task this is the operationally
-meaningful result: it places a diver or recovery crane within a boat length of
-the target, in water where neither could otherwise be directed at all.
+Both submerged vehicles are found in every run, at a mean localisation error of
+\SI{\repDetErrMean}{\metre} across seeds. That is the operationally meaningful
+result for a search task: it places a diver or a recovery crane within a boat
+length of the target, in water where neither could otherwise be directed at
+all.
+
+The collapsed deck span is the harder case and is missed in two of the
+\detRuns{} runs. It is a \SI{15}{\metre} by \SI{6}{\metre} slab, so it is
+matched footprint aware, against a gate of half its own diagonal rather than a
+fixed radius. In the runs that miss it the nearest contact still falls about a
+metre outside that footprint. An extended, low, flat object lying nearly flush
+with the bed is close to the worst case for a height threshold detector, and it
+is the case a trained classifier would most obviously help with.
+
+\subsubsection{The false alarm rate, which recall alone hides}
+
+Reporting recall by itself would flatter this. The detector flags any bed
+anomaly above its height threshold, so it also raises contacts that correspond
+to nothing in the scene. Matching every contact against every registered
+object, boulders and debris included, separates the two:
+
+\begin{table}[htbp]\centering\small
+\caption{Detection quality over \detRuns{} runs on a
+\SI{\detSurveyHa}{\hectare} survey box.}
+\begin{tabular}{lc}
+\toprule
+Contacts raised per run & \detContacts{} \\
+Of which false alarms & \detFalseAlarms{} $\pm$ \detFalseAlarmsSd{} \\
+False alarms per hectare & \detFalsePerHa{} \\
+All primary targets found & \detAllFound{}/\detRuns{} runs \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Roughly \detFalseAlarms{} of the \detContacts{} contacts are spurious, and
+their median distance to the nearest real object is about \SI{8.6}{\metre}, so
+they are not near misses on real boulders but genuine false returns from map
+noise, mostly near the survey boundary where sounding density is lowest.
+
+Stated plainly, this is a screening tool and not a classifier. What it delivers
+is the reduction of an unsearchable \SI{\detSurveyHa}{\hectare} of zero
+visibility water to roughly \detContacts{} georeferenced contacts, with the
+submerged vehicles reliably among them. For a dive team with hours of bottom
+time that is the difference between a search and a task list. It is not a
+finished product, and the obvious next step is a classifier over the contact
+list rather than a better threshold.
 
 \subsection{Cross-domain transfer: a negative result, stated plainly}
 
@@ -600,9 +719,11 @@ that the standard commercial platform is out of envelope, and the fin
 requirement that follows from the Munk moment, came from the simulation and
 changed the vehicle.
 \item \textbf{The geometric detector.} Locating a submerged bus is a geometry
-problem, solved at \detPrimary{}/\detPrimaryTotal{} with no training data at
-all. That is the capability the disaster mission actually needs, and it is
-precisely the one for which no labelled sonar exists.
+problem, and both are found in every run with no training data at all. That is
+the capability the disaster mission actually needs, and it is precisely the one
+for which no labelled sonar exists. It is a screening tool rather than a
+classifier: it also raises about \detFalseAlarms{} false contacts per run, and
+it misses the flat deck slab in two runs of \detRuns{}.
 \end{enumerate}
 
 \subsection{Repeatability}
@@ -698,9 +819,18 @@ further \SI{\boardWaitMean}{\milli\second}, which is an artifact of the bench
 topology where the plant runs on a separate host; on the vehicle the estimator
 and the plant sensors are on the same board.
 
-This is the difference between a claim of simulated capability and a claim of
-validated capability. The autonomy is real code running inside a real-time
-budget on representative flight hardware, and it reproduces the simulation.
+One caveat on this table. The on-hardware run predates the stability
+correction of Section~\ref{sec:cad-budget}, so its navigation figure was
+produced with the superseded value. The per-tick timing is unaffected, being a
+property of the code path rather than of any coefficient, and the software
+loopback was re-run at the corrected value and still returns equivalence at
+\SI{0.107}{\metre}. The on-hardware run will be repeated at the corrected
+value; it is reported here as measured rather than quietly restated.
+
+Subject to that, this is the difference between a claim of simulated capability
+and a claim of validated capability. The autonomy is real code running inside a
+real-time budget on representative flight hardware, and it reproduces the
+simulation.
 
 % ======================================================================
 \section{Verification and honest limitations}
@@ -719,7 +849,11 @@ closed form drag balance.
 \item Navigation error against simulation ground truth over a full mission.
 \item Mapped bathymetry, scour and target positions against ground truth.
 \item Perception on a real, held out sonar test split.
-\item The full mission executing on a RISC-V flight computer, reproducing the simulation result within centimetres inside the control budget.
+\item The full mission executing on a RISC-V flight computer, reproducing the
+simulation result within centimetres inside the control budget.
+\item A closed mass and stability budget: the modelled hull encloses the
+simulated displacement to \SI{\cadVolErr}{\percent}, at the simulated mass, in
+level trim.
 \end{itemize}
 
 \subsection{What is not}
@@ -739,6 +873,14 @@ This is reported rather than hidden, with the diagnosis above.
 \item \textbf{Detection recall is quoted for objects above roughly one metre.}
 Smaller debris is below the resolution of the map cell and the sonar
 footprint.
+\item \textbf{The detector's false alarm rate is high.} About
+\detFalsePerHa{} spurious contacts per hectare accompany the real ones, and the
+flat deck slab is missed in two runs of \detRuns{}. The output is a contact
+list for a dive team, not an identification.
+\item \textbf{The stability margin is now CAD derived, not assumed}, but the
+hydrodynamic coefficients around it remain estimates. The
+\SI{\cadBG}{\milli\metre} separation replaced an assumed
+\SI{\cadBGAssumed}{\milli\metre} that the layout showed to be unreachable.
 \end{itemize}
 
 % ======================================================================
