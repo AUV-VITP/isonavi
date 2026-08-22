@@ -283,8 +283,19 @@ a term worth two percent of the total changes the net stabilising moment at
 speed by four percent. At hover the buoyancy term is all there is, and it
 halves, but it remains positive and the vehicle remains upright.
 
-This is the loop worth having. The error was real, it was in the direction of
-flattering the design, and the CAD is what caught it.
+The layout is then cross checked against the geometry kernel, which found a
+second error. The solve had been placing the hull's displaced volume at the
+hull mid-length, which a Myring form does not satisfy: the tail is nearly twice
+the length of the nose, so the volume centroid sits \SI{41}{\milli\metre} aft
+of mid-length. The centre of buoyancy was therefore in the wrong place, and the
+trim ballast the solve returned was \SI{105}{\milli\metre} out of position. The
+budget had been reporting level trim while describing a vehicle that would have
+floated nose up. Computing the centroid properly fixes it, and the analytic and
+kernel figures now agree to \SI{0.01}{\milli\metre}.
+
+This is the loop worth having. Both errors were real, both were in the
+direction of flattering the design, and in each case it was the act of building
+the vehicle properly that caught them.
 
 \subsection{Consequences for the mission plan}
 
@@ -854,6 +865,9 @@ simulation result within centimetres inside the control budget.
 \item A closed mass and stability budget: the modelled hull encloses the
 simulated displacement to \SI{\cadVolErr}{\percent}, at the simulated mass, in
 level trim.
+\item The analytic layout against an independent geometry kernel: hull volume,
+volume centroid, mass, displacement and trim all agree, which is what caught
+both the stability and the trim errors.
 \end{itemize}
 
 \subsection{What is not}

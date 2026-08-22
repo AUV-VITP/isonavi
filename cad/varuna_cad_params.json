@@ -12,17 +12,17 @@
  "mass_kg": 28.0,
  "net_buoyancy_N": 1.962,
  "cg_mm": [
-  -1.06,
+  -34.81,
   0.0,
   -21.39
  ],
  "cb_mm": [
-  -1.06,
+  -34.81,
   0.0,
   5.91
  ],
  "bg_mm": 27.3,
- "trim_offset_mm": -0.0,
+ "trim_offset_mm": 0.0,
  "ballast_kg": 9.031,
  "n_thrusters": 8,
  "n_parts": 36
