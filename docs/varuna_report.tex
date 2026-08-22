@@ -71,7 +71,10 @@ completes a \SI{\misPath}{\metre} autonomous survey with a mean navigation
 error of \SI{\misNavMean}{\metre} without any external positioning. Third,
 submerged vehicles and structural debris are located from the resulting
 bathymetric map with no training data at all, at a mean localisation error of
-\SI{\detMeanErr}{\metre}.
+\SI{\detMeanErr}{\metre}. Finally, the complete mission was executed with the
+autonomy running on a RISC-V flight computer, reproducing the simulation result
+to within centimetres inside the real-time control budget, which moves the
+maturity claim from simulated to hardware-validated.
 \end{minipage}
 
 \vfill
@@ -183,6 +186,27 @@ Station keeping at \SI{1.96}{\metre\per\second} & swept, \SI{14.0}{\metre} error
 \bottomrule
 \end{tabular}
 \end{table}
+
+
+\subsection{Vehicle general arrangement}
+
+The vehicle is defined parametrically from the same numbers the simulation
+uses, so the drawing is the vehicle that was simulated rather than an
+illustration. The hull is a Myring profile, the standard low-drag axisymmetric
+body for autonomous underwater vehicles: an elliptical nose, a parallel
+mid-body carrying the pressure housing, and a fined tail. The mid-body length
+is solved so the displaced volume equals the simulation value of
+\SI{\cadVolume}{\cubic\metre}; the built hull matches that to
+\SI{\cadVolErr}{\percent}, so the buoyancy in the drawing is consistent with
+the buoyancy in the physics. The eight thruster positions come directly from
+the allocation arms, and the aft fins are sized to the fin coefficient that
+makes the hull directionally stable. The result is
+\SI{\cadLength}{\milli\metre} long at \SI{\cadDia}{\milli\metre} diameter.
+
+\keyfig{../cad/varuna_hero.png}
+{VARUNA-1 general arrangement, generated from the simulation parameters.
+Myring hull, four canted horizontal thrusters and four vertical thrusters on
+faired pylons, cruciform aft fins, forward sonar dome.}{fig:cad}
 
 \subsection{Consequences for the mission plan}
 
@@ -613,6 +637,72 @@ All primary targets found & \repAllTargets{}/\repRuns{} \\
 honest statement of what the system does.}{fig:repeat}
 
 % ======================================================================
+\section{Hardware in the loop}\label{sec:hil}
+
+Everything above is simulation. The maturity question a funder actually asks is
+whether the autonomy runs on real hardware, so it was put on real hardware. The
+control loop was distributed across three processors:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+\item a host, running the physics, the sonar and the sensor models, holding the
+ground truth;
+\item a flight computer, a LicheeRV Nano single-board computer with a RISC-V
+processor at \SI{750}{\mega\hertz}, running the estimation, control and mission
+state machine;
+\item an actuator interface, an ESP32 driving eight electronic speed
+controllers.
+\end{itemize}
+
+The board is the real-time master. Each tick it requests the sensor sample from
+the host, runs the extended Kalman filter and the controller, sends pulse
+widths to the ESP32, and returns the applied wrench so the host integrates the
+plant. The estimation, control and mission code on the board are the exact same
+modules the pure-simulation stack runs, not a reimplementation.
+
+The board never receives ground truth. It sees only what the sensors produce
+and acts on its own estimate, so a matching mission result means the autonomy
+runs on the hardware, not that the hardware was handed the answer. The link is a
+framed, CRC-checked protocol that resynchronises after corruption and rejects
+bad frames rather than acting on them; it passed the full mission with zero
+CRC errors.
+
+\keyfig{../simulation/results/figures/f12_hil.png}
+{Full mission executed on the flight computer. Left: the on-board pose estimate
+against the host's ground truth. Centre: navigation error over the run. Right:
+per-tick board timing, compute separated from the sensor round-trip, against
+the control budget.}{fig:hil}
+
+\begin{table}[htbp]\centering\small
+\caption{The identical mission, run in pure simulation and with the control loop
+executing on the RISC-V flight computer.}
+\begin{tabular}{lcc}
+\toprule
+& \textbf{Pure simulation} & \textbf{On the flight computer} \\
+\midrule
+Navigation error, mean & \SI{\misNavMean}{\metre} & \SI{\hilNavMean}{\metre} \\
+Navigation error, maximum & \SI{\misNavMax}{\metre} & \SI{\hilNavMax}{\metre} \\
+Ticks completed & \num{17834} & \hilTicks{} \\
+Final phase & DONE & DONE \\
+CRC errors & n/a & \hilCrc{} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The mission completed on the board with a mean navigation error of
+\SI{\hilNavMean}{\metre}, within centimetres of the pure-simulation result. The
+estimation, control and mission logic cost \SI{\boardComputeMean}{\milli\second}
+per tick on the board, \SI{\boardComputeNn}{\milli\second} at the 99th
+percentile, against a \SI{\boardBudget}{\milli\second} control budget at
+\SI{20}{\hertz}, a margin of \boardMargin{} times. The sensor round-trip added a
+further \SI{\boardWaitMean}{\milli\second}, which is an artifact of the bench
+topology where the plant runs on a separate host; on the vehicle the estimator
+and the plant sensors are on the same board.
+
+This is the difference between a claim of simulated capability and a claim of
+validated capability. The autonomy is real code running inside a real-time
+budget on representative flight hardware, and it reproduces the simulation.
+
+% ======================================================================
 \section{Verification and honest limitations}
 
 Every quantitative claim in this report is produced by a script in the
@@ -629,6 +719,7 @@ closed form drag balance.
 \item Navigation error against simulation ground truth over a full mission.
 \item Mapped bathymetry, scour and target positions against ground truth.
 \item Perception on a real, held out sonar test split.
+\item The full mission executing on a RISC-V flight computer, reproducing the simulation result within centimetres inside the control budget.
 \end{itemize}
 
 \subsection{What is not}
@@ -664,7 +755,7 @@ validated on real sonar data. The path to a field system is:
 \midrule
 Now &
 Simulation, autonomy, mapping, perception, verification &
-This report and the accompanying repository \\
+This report, the repository, and the hardware-in-the-loop run \\
 Months 1 to 6 &
 CFD and tow tank validation of the faired hull; hardware in the loop with
 flight controller and edge compute; indigenous thruster and pressure housing

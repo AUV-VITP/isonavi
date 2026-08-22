@@ -37,6 +37,8 @@ Measured against simulation ground truth the vehicle never observes, across
 | Scour depth recovery | 86 % |
 | Primary targets found, no training data | 4/4 in 4 of 5 runs, 1.79 +/- 0.37 m |
 | Sonar detector on real ARIS test split | 99.0 % mAP@0.5 |
+| Full mission on RISC-V flight computer | nav error 0.131 m, DONE, 0 CRC errors |
+| Board compute per tick | 30.4 ms mean vs 50 ms budget (1.5x margin) |
 
 ## What is here
 
@@ -109,6 +111,24 @@ negative transfer from a narrow synthetic source domain.
 The conclusion drawn in the report is that the simulator's value is closed-loop
 autonomy validation, vehicle design decisions, and the geometric detector, not
 supplying training data for fine-grained classification.
+
+## Hardware in the loop
+
+The autonomy stack runs on real hardware, driven by the simulator. A LicheeRV
+Nano (RISC-V rv64 @ 750 MHz) runs the EKF, controller and mission state machine;
+an ESP32 drives the thruster PWM; the host runs the physics and holds ground
+truth. The board never sees ground truth, so a matching result means the
+autonomy runs on hardware rather than that the hardware was handed the answer.
+The full 894 s mission completed on the board at 0.131 m navigation error,
+reproducing the pure-simulation result, with 30.4 ms compute per tick against a
+50 ms budget and zero protocol errors. See `hil/`.
+
+## Vehicle CAD
+
+`cad/varuna_cad.py` builds the vehicle parametrically from the simulation
+parameters. The Myring hull displaces exactly the simulated 0.0282 m3 (matched
+to 0.01 percent) and the eight thruster positions come from the allocation
+arms, so the drawing is the vehicle that was simulated. See `cad/`.
 
 ## Running it
 
