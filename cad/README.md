@@ -76,6 +76,23 @@ by strength.
 These are closed form hand calculations, not a substitute for FEA or a
 pressure test.
 
+## Where the drag comes from
+
+`hydrodynamics.py` derives the coefficients the dynamics model uses. Bare hull
+friction comes from the ITTC 1957 line with a form factor; the appendages are
+built up over the ducts, pylons and fins as modelled.
+
+The total is 38.9 against the 32 the simulation assumes, within 21 percent,
+which is close for a number that was previously an assertion. The interesting
+part is the split: the bare Myring hull is 3 percent of axial drag and the
+eight thruster ducts are 93 percent. Refining the hull form would buy almost
+nothing. If this vehicle needs to go further, the thrusters are what to fair or
+retract.
+
+Re-checking the station keeping envelope at the higher drag drops it from
+2.93 to 2.69 m/s against a 2.4 m/s site current, so the margin is 1.12 rather
+than 1.22. The design holds on a thinner margin than the simulation implies.
+
 ## Files
 
 | file | what it is |
@@ -85,6 +102,7 @@ pressure test.
 | `render_views.py` | renders and the dimensioned drawing |
 | `verify_cad.py` | cross checks the layout against the geometry kernel |
 | `structures.py` | pressure hull and pylon sizing |
+| `hydrodynamics.py` | drag and added mass derived from the geometry |
 | `varuna_vehicle.step` | parametric assembly for CAD |
 | `varuna_cad_params.json` | derived dimensions and the verification numbers |
 
@@ -98,6 +116,7 @@ python varuna_cad.py       # STEP and STL, plus the volume check
 python render_views.py     # hero, GA, dimensioned drawing, cutaway, exploded
 python verify_cad.py       # cross check the two against each other
 python structures.py       # depth rating and pylon loads
+python hydrodynamics.py    # drag build up and the current envelope
 ```
 
 `varuna_cad.py` reports the volume of the hull it actually built against the

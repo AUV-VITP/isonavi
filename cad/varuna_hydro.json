@@ -1,0 +1,22 @@
+{
+ "surge_thrust_N": 339.4112549695428,
+ "envelope_sim": 2.931118818792321,
+ "envelope_cad": 2.6857988807562183,
+ "site_current": 2.4,
+ "margin_cad": 1.1190828669817576,
+ "v_ref": 2.0,
+ "reynolds": 2177162.561645352,
+ "cf": 0.00398569463144752,
+ "form_factor": 1.1325046526803393,
+ "drag_hull": 1.2690778342774458,
+ "drag_appendages": 37.591818024851236,
+ "drag_total": 38.86089585912868,
+ "drag_sim": 32.0,
+ "drag_ratio": 1.2144029955977713,
+ "appendage_share_pct": 96.7343062834221,
+ "added_axial_hull": 1.256900394040027,
+ "added_axial_ducts": 4.891836752757738,
+ "added_axial_total": 6.148737146797766,
+ "added_lateral_hull": 25.907766009933287,
+ "slenderness": 6.047673782348199
+}

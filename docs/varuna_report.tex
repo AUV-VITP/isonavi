@@ -304,6 +304,62 @@ These are closed form hand calculations of the kind used to size a shell before
 analysis. They are not a substitute for finite element work or a pressure test,
 and both belong in the build phase.
 
+\subsubsection{Where the drag actually comes from}
+
+The dynamics model has been carrying drag and added mass coefficients that were
+estimates made before the vehicle had a shape. It has one now, so they can be
+derived from it. Bare hull friction is taken from the ITTC 1957 correlation
+line with a form factor for a body of revolution, and the appendages are built
+up over the ducts, pylons and fins as modelled.
+
+\begin{table}[htbp]\centering\small
+\caption{Axial quadratic drag build up at \SI{2}{\metre\per\second}, in newtons
+per \si{\metre\squared\per\second\squared}. The hull is not what makes this
+vehicle draggy.}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Contribution} & \textbf{Coefficient} & \textbf{Share} \\
+\midrule
+Bare hull, friction and form & \hydroDragHull{} & 3 \% \\
+Four horizontal thruster ducts & 21.2 & 55 \% \\
+Four vertical thruster ducts & 14.7 & 38 \% \\
+Pylons and fins & 1.7 & 4 \% \\
+\midrule
+Total from geometry & \hydroDragTotal{} & \\
+Value used in simulation & \hydroDragSim{} & ratio \hydroDragRatio{} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two things follow. The first is reassurance: the coefficient the simulation has
+been using is within \SI{21}{\percent} of one derived from the geometry, which
+is close for a quantity that was previously an assertion.
+
+The second is a design finding. The bare Myring hull contributes
+\SI{3}{\percent} of axial drag. The eight thruster ducts contribute
+\SI{93}{\percent}. Refining the hull form on this vehicle would buy almost
+nothing, because its drag is set by the hover authority bolted to it, not by
+its shape. If this vehicle is ever to go faster or further, the thrusters are
+what to fair or retract, and that is not a conclusion available without the
+CAD.
+
+Added mass was estimated from Lamb's coefficients for the prolate spheroid of
+the same slenderness plus the water entrained by the ducts, giving
+\SI{\hydroAddAxial}{\kilo\gram} axially against \SI{12}{\kilo\gram} assumed,
+and \SI{\hydroAddLateral}{\kilo\gram} laterally against
+\SI{42}{\kilo\gram}. The simulation is the more sluggish of the two in both
+axes, which makes it the harder control problem and so the safer direction to
+have erred in.
+
+The station keeping envelope was re-checked at the higher drag, because the
+entire case for this vehicle rests on it. It falls from
+\SI{\hydroEnvSim}{\metre\per\second} to \SI{\hydroEnvCad}{\metre\per\second}
+against a site surface current of \SI{\siteCurrent}{\metre\per\second}. The
+margin is therefore \hydroMargin{} rather than the \num{1.22} the simulation
+implies. The design still holds, on a thinner margin than previously stated,
+and the honest reading is that a further drag increase of a quarter would put
+the vehicle out of envelope at this site.
+
 \subsubsection{What the budget caught}\label{sec:cad-budget}
 
 The separation between centre of buoyancy and centre of gravity sets the
@@ -919,8 +975,10 @@ both the stability and the trim errors.
 
 \begin{itemize}[leftmargin=*,itemsep=2pt]
 \item \textbf{No physical vehicle exists.} All vehicle results are simulation.
-The hydrodynamic coefficients for the faired hull are engineering estimates and
-require CFD and tow tank validation.
+The hydrodynamic coefficients are now cross checked against estimates derived
+from the CAD geometry, and agree to \SI{21}{\percent} in axial drag, but both
+sides of that comparison are closed form. CFD and tow tank validation remain
+required, and the appendage drag coefficients are the least certain part.
 \item \textbf{The site is representative, not surveyed.} Dimensions are
 consistent with published descriptions of the Mahad collapse and with
 IRC:SP:35 practice, but they are modelling assumptions, not measured
