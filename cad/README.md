@@ -60,6 +60,22 @@ and nothing protrudes below the skin except the acoustics.
 The 9.0 kg of trim ballast is also the payload growth margin: at fixed
 displacement it can be traded for instrumentation without touching the hull.
 
+## Depth rating
+
+`structures.py` sizes the hull. For a thin shell under external pressure the
+governing mode is elastic instability, not strength: at the 50 m design depth
+the hoop stress carries a factor of 23, but an unstiffened 4 mm skin of this
+diameter collapses at 66 m. Ring frames at 200 mm spacing move that to 482 m,
+a factor of 7.3, giving 9.6 on the design depth. The frames in the model are
+load bearing, not decoration.
+
+The pylons carry a 214 mm cantilever with one thruster at its 120 N limit,
+reaching 10.3 MPa at the root, a factor of 24. They are sized by the flow, not
+by strength.
+
+These are closed form hand calculations, not a substitute for FEA or a
+pressure test.
+
 ## Files
 
 | file | what it is |
@@ -68,6 +84,7 @@ displacement it can be traded for instrumentation without touching the hull.
 | `varuna_cad.py` | the geometry, driven by the layout |
 | `render_views.py` | renders and the dimensioned drawing |
 | `verify_cad.py` | cross checks the layout against the geometry kernel |
+| `structures.py` | pressure hull and pylon sizing |
 | `varuna_vehicle.step` | parametric assembly for CAD |
 | `varuna_cad_params.json` | derived dimensions and the verification numbers |
 
@@ -80,6 +97,7 @@ python varuna_layout.py    # the mass and stability budget
 python varuna_cad.py       # STEP and STL, plus the volume check
 python render_views.py     # hero, GA, dimensioned drawing, cutaway, exploded
 python verify_cad.py       # cross check the two against each other
+python structures.py       # depth rating and pylon loads
 ```
 
 `varuna_cad.py` reports the volume of the hull it actually built against the
