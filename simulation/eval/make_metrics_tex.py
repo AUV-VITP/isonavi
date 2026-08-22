@@ -214,6 +214,26 @@ _ST = (("structDepth", "design_depth_m", "{:.0f}"),
 for _n, _k, _f in _ST:
     cmd(_n, struct.get(_k) if struct else None, _f)
 
+# ---------------------------------------------------------------- hydrodynamics
+_hyp = os.path.join(os.path.dirname(ROOT), "cad", "varuna_hydro.json")
+hydro = json.load(open(_hyp)) if os.path.exists(_hyp) else None
+_HY = (("hydroCf", "cf", "{:.5f}"),
+       ("hydroForm", "form_factor", "{:.3f}"),
+       ("hydroDragHull", "drag_hull", "{:.1f}"),
+       ("hydroDragApp", "drag_appendages", "{:.1f}"),
+       ("hydroDragTotal", "drag_total", "{:.1f}"),
+       ("hydroDragSim", "drag_sim", "{:.0f}"),
+       ("hydroDragRatio", "drag_ratio", "{:.2f}"),
+       ("hydroAppShare", "appendage_share_pct", "{:.0f}"),
+       ("hydroAddAxial", "added_axial_total", "{:.1f}"),
+       ("hydroAddLateral", "added_lateral_hull", "{:.1f}"),
+       ("hydroEnvSim", "envelope_sim", "{:.2f}"),
+       ("hydroEnvCad", "envelope_cad", "{:.2f}"),
+       ("hydroMargin", "margin_cad", "{:.2f}"),
+       ("hydroSlender", "slenderness", "{:.2f}"))
+for _n, _k, _f in _HY:
+    cmd(_n, hydro.get(_k) if hydro else None, _f)
+
 # ---------------------------------------------------------------- detection quality
 _rep = load("repeatability.json", {}) or {}
 cmd("detContacts", _rep.get("contacts_per_run"), "{:.1f}")
