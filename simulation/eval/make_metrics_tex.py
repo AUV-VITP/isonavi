@@ -170,17 +170,39 @@ else:
         cmd(n, None)
 
 # ---------------------------------------------------------------- vehicle cad
-import json as _json
-_cadp = os.path.expanduser("~/dev/rakshatech/cad/varuna_cad_params.json")
-cad = _json.load(open(_cadp)) if os.path.exists(_cadp) else None
-if cad:
-    cmd("cadLength", cad.get("hull_length_mm"), "{:.0f}")
-    cmd("cadDia", cad.get("hull_diameter_mm"), "{:.0f}")
-    cmd("cadVolErr", abs(cad.get("volume_error_pct", 0)), "{:.2f}")
-    cmd("cadVolume", cad.get("displaced_volume_m3"), "{:.4f}")
-else:
-    for n in ("cadLength", "cadDia", "cadVolErr", "cadVolume"):
-        cmd(n, None)
+# Read straight from the CAD solve so the drawing and the document cannot
+# disagree about the vehicle.
+_cadp = os.path.join(os.path.dirname(ROOT), "cad", "varuna_cad_params.json")
+cad = json.load(open(_cadp)) if os.path.exists(_cadp) else None
+_CAD = (("cadLength", "hull_length_mm", "{:.0f}"),
+        ("cadDia", "hull_diameter_mm", "{:.0f}"),
+        ("cadSlender", "hull_slenderness", "{:.1f}"),
+        ("cadMidbody", "midbody_length_mm", "{:.0f}"),
+        ("cadWetted", "wetted_area_m2", "{:.3f}"),
+        ("cadSkin", "skin_thickness_mm", "{:.0f}"),
+        ("cadVolume", "displaced_volume_m3", "{:.4f}"),
+        ("cadHullVolume", "hull_volume_m3", "{:.4f}"),
+        ("cadMass", "mass_kg", "{:.1f}"),
+        ("cadNetBuoy", "net_buoyancy_N", "{:.2f}"),
+        ("cadBG", "bg_mm", "{:.1f}"),
+        ("cadBallast", "ballast_kg", "{:.1f}"),
+        ("cadParts", "n_parts", "{}"))
+for _name, _key, _fmt in _CAD:
+    cmd(_name, cad.get(_key) if cad else None, _fmt)
+cmd("cadVolErr", abs(cad.get("hull_volume_error_pct", 0.0)) if cad else None,
+    "{:.3f}")
+# The stability separation the dynamics model assumed before the CAD was built.
+cmd("cadBGAssumed", 85.0, "{:.0f}")
+
+# ---------------------------------------------------------------- detection quality
+_rep = load("repeatability.json", {}) or {}
+cmd("detContacts", _rep.get("contacts_per_run"), "{:.1f}")
+cmd("detFalseAlarms", _rep.get("false_alarms_per_run"), "{:.1f}")
+cmd("detFalseAlarmsSd", _rep.get("false_alarms_std"), "{:.1f}")
+cmd("detFalsePerHa", _rep.get("false_alarms_per_hectare"), "{:.1f}")
+cmd("detSurveyHa", _rep.get("survey_area_ha"), "{:.2f}")
+cmd("detAllFound", _rep.get("all_targets_found"), "{}")
+cmd("detRuns", _rep.get("runs"), "{}")
 
 # ---------------------------------------------------------------- cross domain
 xd = load("cross_domain_metrics.json", None)

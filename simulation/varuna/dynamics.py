@@ -128,7 +128,7 @@ BLUEROV2_HEAVY = VehicleParams(
 VARUNA_1 = VehicleParams(
     name="VARUNA-1 (faired, high-thrust)",
     mass=28.0, volume=0.0282,
-    r_b=(0.0, 0.0, 0.085),
+    r_b=(0.0, 0.0, 0.0273),   # from the CAD mass budget, see cad/varuna_layout.py
     inertia=(0.55, 1.60, 1.70),
     added_mass=(12.0, 42.0, 45.0, 0.60, 3.20, 3.40),
     r_g=(0.0, 0.0, 0.0),

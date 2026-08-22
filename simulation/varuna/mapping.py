@@ -255,8 +255,8 @@ def detect_objects_from_residual(bmap: BathymetryMap, min_height=0.45,
 def match_detections(detections, truth, gate=6.0, footprint_aware=True):
     """Greedy nearest-neighbour association of detections to known targets.
 
-    For extended targets a fixed centroid gate is the wrong test: an
-    \SI{15}{\metre} deck slab detected anywhere along its length is found, even
+    For extended targets a fixed centroid gate is the wrong test: a
+    15 m deck slab detected anywhere along its length is found, even
     though its cluster centroid may sit several metres from the object centre.
     When ``footprint_aware`` is set the gate is widened to half the target's
     own diagonal, so large objects are judged by whether the detection falls on
