@@ -78,19 +78,56 @@ def r_tail(x):
     return max(rt, HULL_R - a2 * x ** 2 + a3 * x ** 3)
 
 
-def _revolve(f, length, steps=400, area=False):
-    """Volume, or lateral surface area, of a body of revolution."""
+def _revolve(f, length, steps=400, area=False, x_offset=0.0, moment=False):
+    """Volume or lateral area of a body of revolution, and its first moment.
+
+    With ``moment`` set, returns the integral of the quantity weighted by the
+    axial station, measured from the nose plus ``x_offset``. Dividing the two
+    gives the centroid, which the trim solve needs and cannot assume.
+    """
     dx = length / steps
     tot = 0.0
     for i in range(steps):
         x0, x1 = i * dx, (i + 1) * dx
         r0, r1 = f(x0), f(x1)
         if area:
-            slant = math.hypot(dx, r1 - r0)
-            tot += math.pi * (r0 + r1) * slant
+            d = math.pi * (r0 + r1) * math.hypot(dx, r1 - r0)
         else:
-            tot += math.pi / 3 * (r0 * r0 + r0 * r1 + r1 * r1) * dx
+            d = math.pi / 3 * (r0 * r0 + r0 * r1 + r1 * r1) * dx
+        tot += d * (x_offset + 0.5 * (x0 + x1)) if moment else d
     return tot
+
+
+def hull_centroids(geom):
+    """Body-frame x of the hull's volume centroid and of its shell centroid.
+
+    Volume centroid sets where the buoyancy acts; shell centroid sets where the
+    skin's own mass acts. Both are aft of the hull mid-length because the tail
+    is the longer end.
+    """
+    x_c = NOSE_L + geom["l_mid"] / 2.0
+    x_tail0 = NOSE_L + geom["l_mid"]
+
+    def mid(f):
+        return math.pi * HULL_R ** 2 * geom["l_mid"]
+
+    v = (_revolve(r_nose, NOSE_L)
+         + math.pi * HULL_R ** 2 * geom["l_mid"]
+         + _revolve(r_tail, TAIL_L))
+    vm = (_revolve(r_nose, NOSE_L, moment=True)
+          + math.pi * HULL_R ** 2 * geom["l_mid"] * (NOSE_L + geom["l_mid"] / 2)
+          + _revolve(r_tail, TAIL_L, x_offset=x_tail0, moment=True))
+
+    a = (_revolve(r_nose, NOSE_L, area=True)
+         + 2 * math.pi * HULL_R * geom["l_mid"]
+         + _revolve(r_tail, TAIL_L, area=True))
+    am = (_revolve(r_nose, NOSE_L, area=True, moment=True)
+          + 2 * math.pi * HULL_R * geom["l_mid"] * (NOSE_L + geom["l_mid"] / 2)
+          + _revolve(r_tail, TAIL_L, area=True, x_offset=x_tail0, moment=True))
+
+    # Hull stations run aft from the nose; the body frame has x forward with
+    # its origin at the hull mid-length, so the sense flips.
+    return x_c - vm / v, x_c - am / a
 
 
 def hull_geometry(v_target):
@@ -158,11 +195,11 @@ def external_parts():
     return p
 
 
-def internal_parts(hull_mass):
+def internal_parts(hull_mass, shell_x=0.0):
     """Items inside the pressure hull. They displace nothing extra."""
     p = []
     a = p.append
-    a(Part("hull shell, pressure boundary", hull_mass, (0.0, 0, 0.0), 0.0,
+    a(Part("hull shell, pressure boundary", hull_mass, (shell_x, 0, 0.0), 0.0,
            "structure"))
     a(Part("aft closure and penetrator plate", 0.80, (-0.300, 0, 0.0), 0.0,
            "structure"))
@@ -185,14 +222,15 @@ def solve_layout():
     geom = hull_geometry(v_hull)
 
     hull_mass = geom["area"] * SKIN_T * RHO_COMP
-    parts = ext + internal_parts(hull_mass)
+    hull_x, shell_x = hull_centroids(geom)
+    parts = ext + internal_parts(hull_mass, shell_x)
 
     ballast_m = TARGET_MASS - sum(q.mass for q in parts)
     ballast_v = 0.0        # inside the hull, already counted in v_hull
 
     # Longitudinal trim: with the ballast free in x, put the centre of gravity
     # under the centre of buoyancy so the vehicle floats level.
-    hull_part = Part("hull enclosed volume", 0.0, (0.0, 0, 0.0), v_hull,
+    hull_part = Part("hull enclosed volume", 0.0, (hull_x, 0, 0.0), v_hull,
                      "structure")
     known = parts + [hull_part]
     M = sum(q.mass for q in known) + ballast_m

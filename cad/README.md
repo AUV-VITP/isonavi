@@ -31,7 +31,16 @@ mission and repeatability suite re-run. The result barely moves, because at
 survey speed the fins supply roughly fifty times the restoring moment the
 buoyancy offset does, and the fixes are documented in the report.
 
-That is the loop worth having: the CAD is what caught the error.
+The cross check found a second error. The solve had been placing the hull's
+displaced volume at the hull mid-length, which a Myring form does not satisfy:
+the tail is nearly twice the nose, so the centroid sits 41 mm aft. The centre
+of buoyancy was in the wrong place and the trim ballast the solve returned was
+105 mm out, so the budget reported level trim while describing a vehicle that
+would have floated nose up. `verify_cad.py` compares the analytic layout
+against the geometry kernel, and the two now agree on the centroid to 0.01 mm.
+
+That is the loop worth having: building the vehicle properly is what caught
+both errors.
 
 ## Architecture
 
@@ -58,6 +67,7 @@ displacement it can be traded for instrumentation without touching the hull.
 | `varuna_layout.py` | component masses, stations, and the budget solve |
 | `varuna_cad.py` | the geometry, driven by the layout |
 | `render_views.py` | renders and the dimensioned drawing |
+| `verify_cad.py` | cross checks the layout against the geometry kernel |
 | `varuna_vehicle.step` | parametric assembly for CAD |
 | `varuna_cad_params.json` | derived dimensions and the verification numbers |
 
@@ -69,6 +79,7 @@ Meshes are gitignored because they regenerate in a few seconds.
 python varuna_layout.py    # the mass and stability budget
 python varuna_cad.py       # STEP and STL, plus the volume check
 python render_views.py     # hero, GA, dimensioned drawing, cutaway, exploded
+python verify_cad.py       # cross check the two against each other
 ```
 
 `varuna_cad.py` reports the volume of the hull it actually built against the
