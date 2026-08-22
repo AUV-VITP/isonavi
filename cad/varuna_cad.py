@@ -1,22 +1,17 @@
-"""Parametric CAD model of the VARUNA-1 vehicle, built with CadQuery.
+"""Parametric CAD model of VARUNA-1, built with CadQuery.
 
-Every principal dimension is derived from the simulation parameters in
-varuna.dynamics.VARUNA_1, so the drawing is the vehicle that was simulated:
+The geometry is driven by two things and invents nothing else:
 
-    displaced volume    0.0282 m3   sets the hull size
-    thruster arms       (0.42, 0.30, 0.38, 0.26) m   set the pod positions
-    CB above CG         85 mm       sets the ballast/float split
-    fin_coeff           110         sizes the aft stabilisers
+  simulation/varuna/dynamics.py::VARUNA_1   mass, displacement, thruster arms
+  cad/varuna_layout.py                      the solved component layout
 
-The hull is a Myring profile, the standard low-drag axisymmetric AUV body: an
-elliptical nose, a parallel mid-body carrying the pressure housing, and a fined
-tail. The mid-body length is solved so the displaced volume matches the
-simulation value, which keeps the CAD buoyancy consistent with the physics.
+The hull size comes from the layout solve, so the modelled hull encloses
+exactly the volume the simulation uses for buoyancy, and every component sits
+at the station the mass budget put it at. The model is therefore checkable: the
+volume it reports back has to agree with the volume it was built from.
 
-The thrusters are mounted on faired pylons off the hull, in the eight-thruster
-vectored arrangement the allocation matrix implies: four canted horizontal
-units for surge, sway and yaw, four vertical units for heave, roll and pitch.
-Everything is one connected body, not a hull with floating pods.
+Outputs a full assembly, a cutaway for the internal arrangement, and an
+exploded view, as STEP and STL.
 """
 
 from __future__ import annotations
@@ -27,220 +22,411 @@ import os
 
 import cadquery as cq
 
+import varuna_layout as L
+
 MM = 1000.0
+DEG = 180.0 / math.pi
 
-# ---------------------------------------------------------------- parameters
-MASS = 28.0
-VOLUME = 0.0282
-ARMS = (0.42, 0.30, 0.38, 0.26)   # lx, ly, vx, vy in metres
-CB_ABOVE_CG = 0.085
-FIN_COEFF = 110.0
-
-D = 0.20
-R = D / 2.0
-NOSE = 0.18
-TAIL = 0.34
-NOSE_N = 2.0
-TAIL_THETA = math.radians(16)
-
-THR_D = 0.100        # thruster duct outer diameter, m (T200-class shroud)
-THR_L = 0.090        # thruster duct length, m
+# Colours, kept consistent across every render and drawing.
+C_HULL = cq.Color(0.86, 0.55, 0.16, 1.0)
+C_WINDOW = cq.Color(0.16, 0.34, 0.52, 1.0)
+C_DARK = cq.Color(0.20, 0.21, 0.26, 1.0)
+C_ACCENT = cq.Color(0.74, 0.40, 0.10, 1.0)
+C_METAL = cq.Color(0.62, 0.64, 0.68, 1.0)
+C_BATT = cq.Color(0.18, 0.42, 0.28, 1.0)
+C_PCB = cq.Color(0.10, 0.45, 0.35, 1.0)
+C_LEAD = cq.Color(0.34, 0.35, 0.40, 1.0)
 
 
-def r_nose(x, a=NOSE, n=NOSE_N):
-    t = (x - a) / a
-    return R * max(0.0, 1.0 - t * t) ** (1.0 / n)
+# ------------------------------------------------------------------ helpers
+def align_z(solid, direction, origin):
+    """Rotate a solid built along +Z onto `direction`, then move it to origin."""
+    dx, dy, dz = direction
+    n = math.sqrt(dx * dx + dy * dy + dz * dz)
+    if n < 1e-12:
+        return solid.translate(origin)
+    dx, dy, dz = dx / n, dy / n, dz / n
+    ax, ay, az = -dy, dx, 0.0          # cross((0,0,1), d)
+    an = math.sqrt(ax * ax + ay * ay)
+    ang = math.acos(max(-1.0, min(1.0, dz))) * DEG
+    if an < 1e-12:                      # already along +/-Z
+        if dz < 0:
+            solid = solid.rotate((0, 0, 0), (1, 0, 0), 180)
+        return solid.translate(origin)
+    return solid.rotate((0, 0, 0), (ax, ay, 0), ang).translate(origin)
 
 
-def r_tail(x, c=TAIL, theta=TAIL_THETA, r_tip=0.028):
-    frac = x / c
-    r = (R
-         - (3 * (R - r_tip) / c ** 2 - math.tan(theta) / c) * (c * frac) ** 2
-         + (2 * (R - r_tip) / c ** 3 - math.tan(theta) / c ** 2) * (c * frac) ** 3)
-    return max(r_tip, r)
+def lens_strut(length, width, thick, taper=0.75):
+    """A faired strut of lens section, lofted root to tip along +Z.
 
-
-def solve_midbody(target_v):
-    def rev(f, length, steps=240):
-        dx = length / steps
-        return sum(math.pi * f((i + 0.5) * dx) ** 2 * dx for i in range(steps))
-    v_nose = rev(r_nose, NOSE)
-    v_tail = rev(r_tail, TAIL)
-    l_mid = (target_v - v_nose - v_tail) / (math.pi * R ** 2)
-    return l_mid, v_nose, v_tail
-
-
-def hull_solid(l_mid):
-    steps = 64
-    pts = [(0.0, 0.0)]
-    for i in range(1, steps + 1):
-        x = NOSE * i / steps
-        pts.append((x, r_nose(x)))
-    pts.append((NOSE + l_mid, R))
-    x1 = NOSE + l_mid
-    for i in range(1, steps + 1):
-        x = TAIL * i / steps
-        pts.append((x1 + x, r_tail(x)))
-    prof = cq.Workplane("XZ").polyline([(px * MM, pr * MM) for px, pr in pts])
-    prof = prof.lineTo(pts[-1][0] * MM, 0).close()
-    hull = prof.revolve(360, (0, 0, 0), (1, 0, 0))
-    return hull, x1 + TAIL, NOSE, x1
-
-
-def thruster(duct_d=THR_D, duct_l=THR_L):
-    """A ducted thruster: shroud ring, central hub, three stator vanes."""
-    Rd = duct_d / 2 * MM
-    L = duct_l * MM
-    duct = cq.Workplane("YZ").circle(Rd).circle(Rd - 5).extrude(L)
-    hub = (cq.Workplane("YZ").workplane(offset=L * 0.30)
-           .circle(Rd * 0.40).extrude(L * 0.40))
-    vanes = cq.Workplane("YZ")
-    for k in range(3):
-        vanes = vanes.union(
-            cq.Workplane("YZ").workplane(offset=L * 0.5)
-            .transformed(rotate=(k * 120, 0, 0))
-            .rect(2 * (Rd - 5), 4).extrude(2, both=True))
-    body = duct.union(hub).union(vanes)
-    return body
-
-
-def _loft_pylon(w, t, length, taper):
-    """A faired strut: a lens (aerofoil-like) cross-section lofted from a wide
-    root to a narrower tip, so it reads as a streamlined mount not a box.
-
-    Both cross-section wires are pushed onto one workplane stack via two
-    ``workplane`` calls before the loft, which is what CadQuery's loft needs.
+    Streamlined rather than a round bar, because these carry the thruster loads
+    through the flow and a bluff strut would add drag where it matters least.
     """
-    def lens_pts(w, t):
-        return (cq.Workplane()
-                .moveTo(-w / 2, 0)
-                .threePointArc((0, t / 2), (w / 2, 0))
-                .threePointArc((0, -t / 2), (-w / 2, 0)).close())
-    wp = (lens_pts(w, t)
+    wp = (cq.Workplane()
+          .moveTo(-width / 2, 0)
+          .threePointArc((0, thick / 2), (width / 2, 0))
+          .threePointArc((0, -thick / 2), (-width / 2, 0)).close()
           .workplane(offset=length)
-          .moveTo(-w * taper / 2, 0)
-          .threePointArc((0, t * taper / 2), (w * taper / 2, 0))
-          .threePointArc((0, -t * taper / 2), (-w * taper / 2, 0)).close())
+          .moveTo(-width * taper / 2, 0)
+          .threePointArc((0, thick * taper / 2), (width * taper / 2, 0))
+          .threePointArc((0, -thick * taper / 2), (-width * taper / 2, 0))
+          .close())
     return wp.loft(combine=True)
 
 
-def build():
-    l_mid, v_nose, v_tail = solve_midbody(VOLUME)
-    hull, total_len, x_mid0, x_mid1 = hull_solid(l_mid)
-    x_c = (x_mid0 + x_mid1) / 2.0
-    lx, ly, vx, vy = ARMS
+# ------------------------------------------------------------------ hull
+def hull_profile(geom, n=72):
+    """Body-frame (x, r) points from tail tip to nose tip, in millimetres.
 
+    The layout builds the Myring profile from the nose, but the body frame has
+    x forward, so the station is mirrored about the hull mid-length.
+    """
+    x_c = L.NOSE_L + geom["l_mid"] / 2.0
+    pts = []
+    # tail tip back to the mid-body
+    for i in range(n, -1, -1):
+        hx = L.TAIL_L * i / n
+        pts.append(((x_c - (geom["x_mid_end"] + hx)) * MM, L.r_tail(hx) * MM))
+    # mid-body
+    pts.append(((x_c - L.NOSE_L) * MM, L.HULL_R * MM))
+    # nose
+    for i in range(n, -1, -1):
+        hx = L.NOSE_L * i / n
+        pts.append(((x_c - hx) * MM, L.r_nose(hx) * MM))
+    # strip duplicate stations that would break the wire
+    out = [pts[0]]
+    for p in pts[1:]:
+        if abs(p[0] - out[-1][0]) > 1e-6:
+            out.append(p)
+    return out
+
+
+def _revolve_profile(pts):
+    """Revolve an (x, r) meridian about the X axis.
+
+    The profile is closed back along the axis, skipping any endpoint that
+    already sits on it: the Myring nose comes to a point, so a closing line
+    there would be zero length and the kernel rejects it.
+    """
+    wp = cq.Workplane("XZ").polyline(pts)
+    if pts[-1][1] > 1e-6:
+        wp = wp.lineTo(pts[-1][0], 0.0)
+    if pts[0][1] > 1e-6:
+        wp = wp.lineTo(pts[0][0], 0.0)
+    return wp.close().revolve(360, (0, 0, 0), (1, 0, 0))
+
+
+def hull_solid(geom):
+    return _revolve_profile(hull_profile(geom))
+
+
+def hull_inner(geom, t):
+    """The internal cavity, built by drawing the meridian in by the skin
+    thickness.
+
+    Offsetting the profile is used in preference to a shell operation on the
+    solid: shelling a revolved body with a pointed nose is fragile in the
+    kernel, whereas an inset meridian is exact and always closes. Stations
+    where the inset radius would vanish are dropped, which leaves the nose and
+    tail tips solid, as they are in the real structure.
+    """
+    pts = [(x, r - t) for x, r in hull_profile(geom) if r - t > 1.0]
+    if len(pts) < 3:
+        return None
+    return _revolve_profile(pts)
+
+
+X_WINDOW = 255.0   # body station where the acoustic window begins, mm
+
+
+def nose_window(geom):
+    """The forward acoustic window, the section the sonar looks through."""
+    pts = [p for p in hull_profile(geom) if p[0] >= (0.255 * MM)]
+    if len(pts) < 3:
+        return None
+    return _revolve_profile(pts)
+
+
+# ------------------------------------------------------------------ parts
+def thruster(duct_d=0.100, duct_l=0.088):
+    """Ducted thruster: shroud, hub, three stators and a three-blade rotor."""
+    rd = duct_d / 2 * MM
+    ln = duct_l * MM
+    duct = cq.Workplane("YZ").circle(rd).circle(rd - 5).extrude(ln)
+    duct = duct.edges("%CIRCLE").fillet(1.5)
+    hub = (cq.Workplane("YZ").workplane(offset=ln * 0.28)
+           .circle(rd * 0.34).extrude(ln * 0.44))
+    body = duct.union(hub)
+    for k in range(3):                      # stator vanes
+        body = body.union(
+            cq.Workplane("YZ").workplane(offset=ln * 0.80)
+            .transformed(rotate=(k * 120, 0, 0))
+            .rect(2 * (rd - 5), 3.0).extrude(2.0, both=True))
+    for k in range(3):                      # rotor blades, pitched
+        blade = (cq.Workplane("YZ").workplane(offset=ln * 0.40)
+                 .transformed(rotate=(k * 120 + 20, 0, 22))
+                 .rect(1.62 * (rd - 5), 12.0).extrude(1.6, both=True))
+        body = body.union(blade)
+    return body
+
+
+def propeller_free():
+    return None
+
+
+def fin(le_x, root_c, tip_c, span, sweep, r_le, r_te, thick=6.0):
+    """A tail stabiliser, built in the XZ plane and extruded across the flow.
+
+    The vehicle points along +x, so the planform runs aft from the leading edge
+    and sweeps further aft as it goes outboard. The root line follows the tail
+    cone: the hull is narrowing over the chord, so a straight root would lift
+    off the skin at the trailing edge.
+    """
+    pts = [(le_x, r_le),
+           (le_x - root_c, r_te),
+           (le_x - sweep - tip_c, r_le + span),
+           (le_x - sweep, r_le + span)]
+    return (cq.Workplane("XZ").polyline(pts).close()
+            .extrude(thick / 2, both=True))
+
+
+def dvl_head():
+    """Four beam Janus head: a body with four transducers at 30 deg."""
+    body = (cq.Workplane("XY").circle(38).extrude(-26)
+            .edges(">Z or <Z").fillet(3.0))
+    for k in range(4):
+        d = (math.sin(math.radians(30)) * math.cos(math.radians(45 + k * 90)),
+             math.sin(math.radians(30)) * math.sin(math.radians(45 + k * 90)),
+             -math.cos(math.radians(30)))
+        tx = (d[0] * 20, d[1] * 20, -22 + d[2] * 6)
+        body = body.union(align_z(cq.Workplane().circle(11).extrude(20),
+                                  d, tx))
+    return body
+
+
+def battery_pack():
+    return (cq.Workplane("XY").box(210, 108, 74)
+            .edges("|X").fillet(6.0))
+
+
+def electronics_stack():
+    """Three boards on standoffs, the flight computer, the interface and power."""
+    a = cq.Workplane("XY")
+    stack = None
+    for i, z in enumerate((-26, 0, 26)):
+        board = cq.Workplane("XY", origin=(0, 0, z)).box(150, 96, 3.0)
+        stack = board if stack is None else stack.union(board)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            post = (cq.Workplane("XY", origin=(sx * 66, sy * 40, 0))
+                    .circle(3.0).extrude(30, both=True))
+            stack = stack.union(post)
+    return stack
+
+
+def esc_bank():
+    return (cq.Workplane("XY").box(120, 92, 44).edges("|Z").fillet(5.0))
+
+
+def sonar_head():
+    """The forward looking array, a flat faced transducer block."""
+    return (cq.Workplane("YZ").circle(52).extrude(56)
+            .edges(">X").fillet(6.0))
+
+
+def ring_frame(radius_mm):
+    return (cq.Workplane("YZ").circle(radius_mm).circle(radius_mm - 9)
+            .extrude(7, both=True))
+
+
+def ballast_blocks(mass_kg, x_mm, z_mm):
+    """Lead trim, split into blocks bolted along the keel rails."""
+    vol_mm3 = mass_kg / L.RHO_LEAD * MM ** 3
+    n = 5
+    each = vol_mm3 / n
+    w, h = 96.0, 30.0
+    ln = each / (w * h)
+    out = None
+    for i in range(n):
+        x = x_mm + (i - (n - 1) / 2) * (ln + 6)
+        blk = (cq.Workplane("XY", origin=(x, 0, z_mm))
+               .box(ln, w, h).edges("|Z").fillet(4.0))
+        out = blk if out is None else out.union(blk)
+    return out
+
+
+# ------------------------------------------------------------------ assembly
+def build(cutaway=False, explode=0.0):
+    parts, geom, v_hull = L.solve_layout()
+    pos = {p.name: p.pos for p in parts}
+    mass = {p.name: p.mass for p in parts}
+
+    hull = hull_solid(geom)
     assy = cq.Assembly()
-    hull_col = cq.Color(0.85, 0.55, 0.15, 1.0)
-    dark = cq.Color(0.20, 0.21, 0.26, 1.0)
-    accent = cq.Color(0.78, 0.42, 0.10, 1.0)
 
-    assy.add(hull, name="hull", color=hull_col)
+    def add(solid, name, color, offset=(0, 0, 0)):
+        if solid is None:
+            return
+        if explode:
+            solid = solid.translate(tuple(o * explode for o in offset))
+        assy.add(solid, name=name, color=color)
 
-    # --- horizontal thrusters: canted 45 deg, on pylons off the hull flanks.
-    # The pod centre is at (x_c +/- lx, +/- ly). The pylon runs from the hull
-    # surface out to the pod.
-    for sx, sy, cant in [(+1, +1, +45), (+1, -1, -45),
-                         (-1, +1, +135), (-1, -1, -135)]:
-        px = x_c + sx * lx
-        py = sy * ly
-        # Faired pylon from the hull flank out to the pod. It runs along y, so
-        # its loft axis (local +z) is rotated to point outboard, and the lens
-        # section is oriented edge-on to the flow (thin in x).
-        hull_r = R
-        pylon_len = (abs(py) - hull_r) * MM
-        pyl = _loft_pylon(46, 16, max(pylon_len, 40), 0.75)
-        pyl = pyl.rotate((0, 0, 0), (1, 0, 0), -90 if sy > 0 else 90)
-        pyl = pyl.translate((px * MM, sy * hull_r * MM, 0))
-        assy.add(pyl, name=f"hpyl_{sx}_{sy}", color=accent)
-        # Thruster at the pod position, canted 45 deg about z for vectored thrust.
-        thr = thruster().rotate((0, 0, 0), (0, 0, 1), cant)
-        thr = thr.translate((px * MM, py * MM, 0))
-        assy.add(thr, name=f"hthr_{sx}_{sy}", color=dark)
+    # -- hull, shown as a shell when cut away so the inside is visible
+    if cutaway:
+        # Hollow the hull, then take away the near half so the arrangement is
+        # visible from the standard viewing side.
+        inner = hull_inner(geom, L.SKIN_T * MM)
+        shell = hull.cut(inner) if inner is not None else hull
+        knife = cq.Workplane("XY").box(2400, 1200, 1200).translate((0, -600, 0))
+        add(shell.cut(knife), "hull", C_HULL)
+    else:
+        # Split the skin at the window station rather than laying a second
+        # solid over it: coincident faces render as z-fighting artefacts and
+        # would double-count the volume.
+        knife = (cq.Workplane("XY").box(4000, 1000, 1000)
+                 .translate((X_WINDOW + 2000, 0, 0)))
+        add(hull.cut(knife), "hull", C_HULL)
+        add(hull.intersect(knife), "acoustic window", C_WINDOW)
 
-    # --- vertical thrusters: on short vertical pylons on top of the hull, ducts
-    # pointing up. Placed clear of the horizontal pods so heave, roll and pitch
-    # authority reads distinctly.
-    top_z = R * MM
-    for sx, sy in [(+1, +1), (+1, -1), (-1, +1), (-1, -1)]:
-        px = x_c + sx * vx
-        py = sy * vy
-        # Vertical faired pylon rising from the hull crown to the duct.
-        pyl = _loft_pylon(40, 16, 55, 0.8)  # loft along +z already
-        pyl = pyl.translate((px * MM, py * MM, top_z * 0.85))
-        assy.add(pyl, name=f"vpyl_{sx}_{sy}", color=accent)
-        thr = thruster(duct_d=0.092, duct_l=0.082)
-        thr = thr.rotate((0, 0, 0), (0, 1, 0), 90)  # duct axis -> vertical
-        thr = thr.translate((px * MM, py * MM, top_z + 60))
-        assy.add(thr, name=f"vthr_{sx}_{sy}", color=dark)
+    # -- internals
+    p = pos["battery pack 14S4P"]
+    add(battery_pack().translate((p[0] * MM, p[1] * MM, p[2] * MM)),
+        "battery", C_BATT, (0, 0, -1))
+    p = pos["electronics stack"]
+    add(electronics_stack().translate((p[0] * MM, p[1] * MM, p[2] * MM)),
+        "electronics", C_PCB, (0, 0, 1))
+    p = pos["thruster ESC bank"]
+    add(esc_bank().translate((p[0] * MM, p[1] * MM, p[2] * MM)),
+        "esc bank", C_DARK, (0, 0, 1))
+    p = pos["forward looking sonar"]
+    add(sonar_head().translate((p[0] * MM - 28, p[1] * MM, p[2] * MM)),
+        "sonar head", C_METAL, (1, 0, 0))
+    p = pos["trim ballast"]
+    add(ballast_blocks(mass["trim ballast"], p[0] * MM, p[2] * MM),
+        "trim ballast", C_LEAD, (0, 0, -1))
+    p = pos["inertial unit"]
+    add(cq.Workplane("XY", origin=(p[0] * MM, p[1] * MM, p[2] * MM))
+        .box(58, 58, 26).edges("|Z").fillet(4), "inertial unit", C_DARK,
+        (0, 0, 1))
 
-    # --- aft cruciform stabilising fins. NACA-ish flat plate, swept.
-    fin_span = 0.115 * MM
-    fin_root = 0.15 * MM
-    fin_x = (x_mid1 + TAIL * 0.30) * MM
+    # ring frames at the mid-body quarter points
+    for xr in (-0.20, 0.0, 0.20):
+        add(ring_frame(L.HULL_R * MM - L.SKIN_T * MM)
+            .translate((xr * MM, 0, 0)), f"ring frame {xr}", C_METAL)
+
+    # equipment rails along the keel
+    for sy in (-1, 1):
+        add(cq.Workplane("XY", origin=(0, sy * 52, -0.052 * MM))
+            .box(620, 16, 10), f"rail {sy}", C_METAL)
+
+    p = pos["aft closure and penetrator plate"]
+    add(cq.Workplane("YZ", origin=(p[0] * MM, 0, 0)).circle(72).extrude(14),
+        "aft closure", C_METAL, (-1, 0, 0))
+
+    # -- external: thrusters on swept pylons rooted on the cylindrical body
+    x_mid_fwd = (L.NOSE_L + geom["l_mid"] / 2) - L.NOSE_L      # body x of nose end
+    for sx in (+1, -1):
+        for sy in (+1, -1):
+            tip = (sx * L.ARM_LX * MM, sy * L.ARM_LY * MM, 0.0)
+            root = (sx * 0.22 * MM, sy * (L.HULL_R - 0.004) * MM, 0.0)
+            d = tuple(t - r for t, r in zip(tip, root))
+            ln = math.sqrt(sum(c * c for c in d))
+            add(align_z(lens_strut(ln, 52, 17), d, root),
+                f"pylon h {sx}{sy}", C_ACCENT, (0, sy, 0))
+            cant = 45 * sx * sy if sx > 0 else 135 * (1 if sy > 0 else -1)
+            cant = {(1, 1): 45, (1, -1): -45,
+                    (-1, 1): 135, (-1, -1): -135}[(sx, sy)]
+            add(thruster().rotate((0, 0, 0), (0, 0, 1), cant).translate(tip),
+                f"thruster h {sx}{sy}", C_DARK, (sx * 0.4, sy, 0))
+
+    z_v = (L.HULL_R + 0.055) * MM
+    for sx in (+1, -1):
+        for sy in (+1, -1):
+            tip = (sx * L.ARM_VX * MM, sy * L.ARM_VY * MM, z_v)
+            root = (sx * 0.20 * MM, sy * 0.045 * MM,
+                    (L.HULL_R - 0.004) * MM * 0.80)
+            d = tuple(t - r for t, r in zip(tip, root))
+            ln = math.sqrt(sum(c * c for c in d))
+            add(align_z(lens_strut(ln, 46, 16), d, root),
+                f"pylon v {sx}{sy}", C_ACCENT, (0, sy, 0.4))
+            add(thruster(0.092, 0.080)
+                .rotate((0, 0, 0), (0, 1, 0), 90).translate(tip),
+                f"thruster v {sx}{sy}", C_DARK, (0, sy, 1))
+
+    # -- cruciform stabilisers on the tail cone
+    x_c = L.NOSE_L + geom["l_mid"] / 2
+    le_x, root_c = -0.320, 0.155
+
+    def hull_r_at(bx):
+        """Hull radius at a body station, following the tail cone."""
+        hx = x_c - bx
+        return L.r_tail(max(0.0, hx - geom["x_mid_end"]))
+
+    r_le = hull_r_at(le_x) * MM - 3
+    r_te = hull_r_at(le_x - root_c) * MM - 3
     for ang in (0, 90, 180, 270):
-        fin = (cq.Workplane("XZ")
-               .moveTo(fin_x, R * MM * 0.55)
-               .lineTo(fin_x + fin_root, R * MM * 0.65)
-               .lineTo(fin_x + fin_root * 0.55, R * MM * 0.55 + fin_span)
-               .lineTo(fin_x + fin_root * 0.12, R * MM * 0.55 + fin_span)
-               .close().extrude(3.5, both=True))
-        fin = fin.rotate((fin_x, 0, 0), (fin_x + 1, 0, 0), ang)
-        assy.add(fin, name=f"fin_{ang}", color=accent)
+        f = fin(le_x * MM, root_c * MM, 72, 104, 54, r_le, r_te)
+        add(f.rotate((0, 0, 0), (1, 0, 0), ang), f"fin {ang}", C_ACCENT,
+            (0, 0, 0))
 
-    # --- forward sonar dome, flat-faced for the FLS head.
-    dome = (cq.Workplane("YZ").workplane(offset=-28)
-            .circle(R * MM * 0.5).extrude(28)
-            .faces("<X").fillet(10))
-    assy.add(dome, name="sonar_dome", color=cq.Color(0.10, 0.30, 0.50, 1.0))
+    # -- belly acoustics
+    p = pos["doppler velocity log"]
+    add(dvl_head().translate((p[0] * MM, 0, p[2] * MM + 20)),
+        "doppler velocity log", C_METAL, (0, 0, -1))
+    p = pos["depth transducer"]
+    add(cq.Workplane("XY", origin=(p[0] * MM, 0, p[2] * MM)).circle(13)
+        .extrude(16), "depth transducer", C_METAL, (0, 0, -1))
 
-    # --- a shallow keel strip carrying ballast, giving the CB-above-CG offset.
-    keel = (cq.Workplane("XZ").workplane(offset=0)
-            .moveTo(x_c * MM - l_mid * MM * 0.35, -R * MM)
-            .rect(l_mid * MM * 0.7, 22, centered=(False, False))
-            .extrude(30, both=True))
-    keel = keel.intersect(hull.translate((0, 0, -R * MM * 0.75)))
-    # keel intersect can be finicky; only add if it produced solid.
-    try:
-        if keel.val().Volume() > 1:
-            assy.add(keel, name="keel", color=dark)
-    except Exception:
-        pass
-
-    info = {
-        "mass_kg": MASS,
-        "displaced_volume_m3": VOLUME,
-        "hull_diameter_mm": D * MM,
-        "hull_length_mm": round(total_len * MM, 1),
-        "midbody_length_mm": round(l_mid * MM, 1),
-        "nose_volume_m3": round(v_nose, 5),
-        "tail_volume_m3": round(v_tail, 5),
-        "midbody_volume_m3": round(math.pi * R ** 2 * l_mid, 5),
-        "thruster_arms_m": ARMS,
-        "cb_above_cg_mm": CB_ABOVE_CG * MM,
-        "fin_coeff": FIN_COEFF,
-        "n_thrusters": 8,
-    }
-    return assy, hull, total_len, info
+    return assy, hull, geom, v_hull, parts
 
 
 if __name__ == "__main__":
     out = os.path.expanduser("~/dev/rakshatech/cad")
     os.makedirs(out, exist_ok=True)
-    assy, hull, total_len, info = build()
 
-    built_v = hull.val().Volume() / (MM ** 3)
-    info["built_hull_volume_m3"] = round(built_v, 5)
-    info["volume_error_pct"] = round(100 * (built_v - VOLUME) / VOLUME, 2)
+    assy, hull, geom, v_hull, parts = build()
+    b = L.budget(parts)
+
+    built = hull.val().Volume() / MM ** 3
+    err = 100 * (built - v_hull) / v_hull
 
     cq.exporters.export(assy.toCompound(), f"{out}/varuna_vehicle.step")
     cq.exporters.export(assy.toCompound(), f"{out}/varuna_vehicle.stl",
+                        tolerance=0.25, angularTolerance=0.12)
+
+    cut, _, _, _, _ = build(cutaway=True)
+    cq.exporters.export(cut.toCompound(), f"{out}/varuna_cutaway.stl",
+                        tolerance=0.25, angularTolerance=0.12)
+
+    exp, _, _, _, _ = build(explode=260.0)
+    cq.exporters.export(exp.toCompound(), f"{out}/varuna_exploded.stl",
                         tolerance=0.3, angularTolerance=0.15)
-    hull.val().exportStl(f"{out}/varuna_hull.stl", tolerance=0.4)
+
+    info = {
+        "hull_length_mm": round(geom["length"] * MM, 1),
+        "hull_diameter_mm": round(L.HULL_D * MM, 1),
+        "hull_slenderness": round(geom["length"] / L.HULL_D, 2),
+        "midbody_length_mm": round(geom["l_mid"] * MM, 1),
+        "wetted_area_m2": round(geom["area"], 4),
+        "skin_thickness_mm": L.SKIN_T * MM,
+        "hull_volume_m3": round(v_hull, 5),
+        "built_hull_volume_m3": round(built, 5),
+        "hull_volume_error_pct": round(err, 3),
+        "displaced_volume_m3": round(b["volume_m3"], 5),
+        "mass_kg": round(b["mass_kg"], 3),
+        "net_buoyancy_N": round(b["net_buoyancy_N"], 3),
+        "cg_mm": [round(c * MM, 2) for c in b["cg"]],
+        "cb_mm": [round(c * MM, 2) for c in b["cb"]],
+        "bg_mm": round(b["bg_z"] * MM, 2),
+        "trim_offset_mm": round(b["trim_x_offset"] * MM, 4),
+        "ballast_kg": round([p.mass for p in parts
+                             if p.name == "trim ballast"][0], 3),
+        "n_thrusters": 8,
+        "n_parts": len(assy.children),
+    }
     with open(f"{out}/varuna_cad_params.json", "w") as f:
         json.dump(info, f, indent=1)
 
-    print("built VARUNA-1 CAD")
+    print("built VARUNA-1")
     for k, v in info.items():
         print(f"  {k}: {v}")
-    print(f"  total length: {total_len*MM:.0f} mm")
