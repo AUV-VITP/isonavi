@@ -259,6 +259,51 @@ touching the hull.
 and speed controllers aft of it, trim ballast along the keel, sonar behind the
 acoustic window.}{fig:cad-cut}
 
+\subsubsection{The hull has to survive the depth}
+
+Making the faired hull the pressure boundary is only defensible if it holds, so
+it was sized. For a thin shell under external pressure the governing failure
+mode is not strength but elastic instability: the skin buckles long before it
+is crushed. At the \SI{\structDepth}{\metre} design depth the membrane hoop
+stress is \SI{\structHoop}{\mega\pascal} against a laminate strength of
+\SI{\structStrength}{\mega\pascal}, a factor of \structSfYield{}, so strength
+is not the question.
+
+Stability is. An unstiffened \SI{\structSkin}{\milli\metre} skin of this
+diameter collapses at \SI{\structCollapseUn}{\metre}, which would leave almost
+no margin on a \SI{\structDepth}{\metre} rating. Ring frames shorten the
+unsupported length and the critical pressure rises steeply as they do. At the
+\SI{\structFrameSpacing}{\milli\metre} spacing modelled, collapse moves to
+\SI{\structCollapseSt}{\metre}, a factor of \structFrameGain{}, giving
+\structSfBuckle{} on the design depth.
+
+\begin{table}[htbp]\centering\small
+\caption{Pressure hull at \SI{\structDepth}{\metre} design depth. The frames
+are load bearing, not tidiness: they are what makes a
+\SI{\structSkin}{\milli\metre} skin viable.}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Mode} & \textbf{Capacity} & \textbf{Factor} \\
+\midrule
+Membrane strength & \SI{\structStrength}{\mega\pascal} & \structSfYield{} \\
+Buckling, no frames & \SI{\structCollapseUn}{\metre} depth &
+\num{1.3} \\
+Buckling, framed & \SI{\structCollapseSt}{\metre} depth & \structSfBuckle{} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The thruster pylons were checked the same way. The horizontal pods stand
+furthest outboard and so carry the worst cantilever on the vehicle,
+\SI{\structPylonArm}{\milli\metre} with one thruster at its
+\SI{120}{\newton} saturation limit. Root bending reaches
+\SI{\structPylonStress}{\mega\pascal}, a factor of \structPylonSf{}, so the
+pylons are sized by stiffness and by the flow rather than by strength.
+
+These are closed form hand calculations of the kind used to size a shell before
+analysis. They are not a substitute for finite element work or a pressure test,
+and both belong in the build phase.
+
 \subsubsection{What the budget caught}\label{sec:cad-budget}
 
 The separation between centre of buoyancy and centre of gravity sets the

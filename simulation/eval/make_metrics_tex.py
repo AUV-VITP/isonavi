@@ -194,6 +194,26 @@ cmd("cadVolErr", abs(cad.get("hull_volume_error_pct", 0.0)) if cad else None,
 # The stability separation the dynamics model assumed before the CAD was built.
 cmd("cadBGAssumed", 85.0, "{:.0f}")
 
+# ---------------------------------------------------------------- pressure hull
+_stp = os.path.join(os.path.dirname(ROOT), "cad", "varuna_structures.json")
+struct = json.load(open(_stp)) if os.path.exists(_stp) else None
+_ST = (("structDepth", "design_depth_m", "{:.0f}"),
+       ("structPressure", "design_pressure_MPa", "{:.3f}"),
+       ("structSkin", "skin_mm", "{:.0f}"),
+       ("structFrameSpacing", "frame_spacing_mm", "{:.0f}"),
+       ("structHoop", "hoop_stress_MPa", "{:.1f}"),
+       ("structStrength", "laminate_strength_MPa", "{:.0f}"),
+       ("structSfYield", "sf_yield", "{:.1f}"),
+       ("structCollapseUn", "collapse_depth_unstiffened_m", "{:.0f}"),
+       ("structCollapseSt", "collapse_depth_stiffened_m", "{:.0f}"),
+       ("structSfBuckle", "sf_buckling", "{:.1f}"),
+       ("structFrameGain", "frame_gain", "{:.1f}"),
+       ("structPylonArm", "pylon_arm_mm", "{:.0f}"),
+       ("structPylonStress", "pylon_stress_MPa", "{:.1f}"),
+       ("structPylonSf", "pylon_sf", "{:.0f}"))
+for _n, _k, _f in _ST:
+    cmd(_n, struct.get(_k) if struct else None, _f)
+
 # ---------------------------------------------------------------- detection quality
 _rep = load("repeatability.json", {}) or {}
 cmd("detContacts", _rep.get("contacts_per_run"), "{:.1f}")
