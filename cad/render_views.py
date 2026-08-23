@@ -423,9 +423,8 @@ def exploded():
     tris, norms, cols = tessellate(assy, 0.25, 0.10)
     fig = plt.figure(figsize=(14, 8), facecolor="white")
     ax = fig.add_subplot(111, projection="3d", facecolor="white")
-    draw(ax, tris, norms, cols, 22, -60, zoom=0.95)
-    ax.text2D(0.015, 0.95, "Exploded view", transform=ax.transAxes,
-              fontsize=18, fontweight="bold", color=BLUE)
+    # Titled by its caption in the document, not here.
+    draw(ax, tris, norms, cols, 18, -56, zoom=1.0)
     plt.savefig(f"{OUT}/varuna_exploded.png", dpi=150, facecolor="white",
                 bbox_inches="tight")
     plt.close()
