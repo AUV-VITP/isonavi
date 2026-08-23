@@ -25,6 +25,16 @@
 \rhead{\small\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
+% Float placement. The defaults reserve so much of a page for text that a
+% tall figure is pushed onto a sheet of its own, leaving most of it blank.
+\renewcommand{\topfraction}{0.92}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.06}
+\renewcommand{\floatpagefraction}{0.80}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{5}
+
 \captionsetup{font=small,labelfont={bf,color=accent}}
 \sisetup{detect-all}
 
@@ -36,6 +46,15 @@
   \IfFileExists{#1}{%
     \begin{figure}[htbp]\centering
     \includegraphics[width=\linewidth]{#1}
+    \caption{#2}\label{#3}
+    \end{figure}}{}}
+
+% The same thing at a chosen fraction of the text width, for figures
+% whose proportions do not want the full measure.
+\newcommand{\widthfig}[4]{%
+  \IfFileExists{#1}{%
+    \begin{figure}[htbp]\centering
+    \includegraphics[width=#4\linewidth]{#1}
     \caption{#2}\label{#3}
     \end{figure}}{}}
 
@@ -68,7 +87,8 @@ station only to \SI{0.96}{\metre\per\second} against a design current of
 \SI{\siteCurrent}{\metre\per\second}. Second, a purpose designed faired
 vehicle raises that envelope to \SI{\hydroEnvCad}{\metre\per\second} on drag
 derived from its own geometry, and completes a \SI{\misPath}{\metre} autonomous
-survey with a mean navigation error of \SI{\misNavMean}{\metre} without any
+survey with a mean navigation error of \SI{\repNavMeanMean}{\metre} across
+\repRuns{} seeds, \SI{\misNavMean}{\metre} in the run reported in detail, without any
 external positioning. Third,
 submerged vehicles are located from the resulting bathymetric map with no
 training data at all, at a mean localisation error of
@@ -89,7 +109,7 @@ maturity claim from simulated to hardware-validated.
 \begin{tabular}{@{}lc@{\hspace{7mm}}lc@{}}
 \toprule
 Station keeping envelope & \SI{\hydroEnvCad}{\metre\per\second} &
-Navigation error, no external fix & \SI{\misNavMean}{\metre} \\
+Navigation error, no external fix & \SI{\repNavMeanMean}{\metre} mean of \repRuns{} \\
 Autonomous mission & \SI{\misPath}{\metre}, \SI{\misDurationMin}{min} &
 Bathymetric map error & \SI{\repMapRmseMean}{\metre} \\
 On a RISC-V flight computer & \SI{\hilNavMean}{\metre} &
@@ -138,11 +158,12 @@ is effectively zero. The system is therefore built around acoustic perception
 throughout.
 
 \keyfig{../cad/varuna_scene.png}
-{The vehicle in the site it was designed for. Left, the survey reach with its
-four piers and the track actually flown. Right, a detection pass over a
-submerged car, vehicle at true scale, with the insonified bed inside the sonar
-aperture and the four Doppler beams. Both panels are the modelled bathymetry
-and the logged trajectory, not an illustration.}{fig:scene}
+{The survey reach the vehicle was designed for, at a vertical exaggeration of
+2.6. Three intact piers and one collapsed pier, shown in orange, stand on the
+modelled bathymetry, and the scour hollows around the pier bases are part of
+that model rather than an annotation. The orange track is the trajectory
+actually flown in the reference mission, logged from the simulator, not a
+sketch of a survey pattern.}{fig:scene}
 
 \subsection{Statutory driver}
 
@@ -585,9 +606,15 @@ roughly \SI{150}{\milli\second} on eight CPU cores, which is faster than the
 
 \keyfig{../simulation/results/figures/real_vs_sim.png}
 {Top: real ARIS Explorer 3000 captures from the public marine debris dataset.
-Bottom: frames from this simulator. Both show the characteristic bright
-target return with a dark shadow behind it, speckle texture, and range
-dependent seabed brightness.}{fig:realvssim}
+Bottom: frames from this simulator, posed at the same short range, near bottom
+geometry the real captures were taken at, so the bed return fills the fan in
+both rows. The first simulated panel is the submerged car: a bright return
+with the acoustic shadow it casts behind it, which is the primary recognition
+cue in sonar imagery. The remaining panels are bed relief, where the shadowed
+far sides of slopes produce the same effect. Both rows share speckle texture
+and brightness that falls with range. The submerged bus is not shown: it lies
+on the lip of the channel, so every approach sees it edge on with no bed
+behind it to shadow.}{fig:realvssim}
 
 % ======================================================================
 \section{Autonomy stack}
@@ -663,6 +690,15 @@ absorbs the bus into the bed estimate and hides it entirely.
 This gives a purely geometric detector that needs no labelled sonar at all.
 That matters because no public training data exists for submerged Indian
 buses, and it is the target class that matters most.
+
+\widthfig{../cad/varuna_detection.png}
+{A detection pass over a submerged car, with the vehicle drawn at true scale
+against it. Cyan is the area of bed lying inside the \SI{130}{\degree} sonar
+aperture at this instant, bounded by the two blue aperture edges. Green are
+the four Doppler velocity log beams at the \SI{30}{\degree} Janus angle that
+holds the navigation solution together with no external fix. The dark bar is
+\SI{2}{\metre}. Every element is the geometry the simulator actually uses.}
+{fig:detpass}{0.9}
 
 \keyfig{../simulation/results/figures/f7_detection.png}
 {Left: height above the fitted bare bed surface. Right: detections against
@@ -785,7 +821,10 @@ mean localisation error \SI{\detMeanErr}{\metre}} \\
 \end{table}
 
 Both submerged vehicles are found in every run, at a mean localisation error of
-\SI{\repDetErrMean}{\metre} across seeds. That is the operationally meaningful
+\SI{\repDetErrMean}{\metre} across the \repRuns{} seeds. The \SI{\detMeanErr}{\metre} quoted in
+the table above is that same quantity for the single reference run tabulated
+there, which is one of those seeds and sits inside the \SI{\repDetErrStd}{\metre}
+spread; the two numbers are consistent rather than competing. That is the operationally meaningful
 result for a search task: it places a diver or a recovery crane within a boat
 length of the target, in water where neither could otherwise be directed at
 all.
@@ -904,11 +943,11 @@ training images.}
 \toprule
 \textbf{Real images} & \textbf{Natural-image init} & \textbf{Simulator init} & \textbf{Difference} \\
 \midrule
-40 & \SI{56.4}{\percent} & \SI{45.8}{\percent} & $-10.5$ \\
-80 & \SI{76.8}{\percent} & \SI{64.1}{\percent} & $-12.7$ \\
-160 & \SI{89.3}{\percent} & \SI{83.1}{\percent} & $-6.2$ \\
-320 & \SI{96.4}{\percent} & \SI{91.8}{\percent} & $-4.6$ \\
-640 & \SI{97.5}{\percent} & \SI{97.9}{\percent} & $+0.4$ \\
+40 & \SI{\deNFourZeroCoco}{\percent} & \SI{\deNFourZeroSim}{\percent} & $\deDiffNFourZero$ \\
+80 & \SI{\deNEightZeroCoco}{\percent} & \SI{\deNEightZeroSim}{\percent} & $\deDiffNEightZero$ \\
+160 & \SI{\deNOneSixZeroCoco}{\percent} & \SI{\deNOneSixZeroSim}{\percent} & $\deDiffNOneSixZero$ \\
+320 & \SI{\deNThreeTwoZeroCoco}{\percent} & \SI{\deNThreeTwoZeroSim}{\percent} & $\deDiffNThreeTwoZero$ \\
+\deBestN{} & \SI{\deNSixFourZeroCoco}{\percent} & \SI{\deNSixFourZeroSim}{\percent} & $\deDiffNSixFourZero$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1308,9 +1347,9 @@ against a parts bill and is a scale reference, not a like for like comparison.}
 & \textbf{REMUS 100} & \textbf{Iver3} & \textbf{VARUNA-1} \\
 \midrule
 Length & \SI{1.6}{\metre} & \SI{2.1}{\metre} &
-\SI{\cadLength}{\milli\metre} \\
+\SI{\cadLengthM}{\metre} \\
 Diameter & \SI{0.19}{\metre} & \SI{0.14}{\metre} &
-\SI{\cadDia}{\milli\metre} \\
+\SI{\cadDiaM}{\metre} \\
 Mass & under \SI{45}{\kilo\gram} & about \SI{30}{\kilo\gram} &
 \SI{\cadMass}{\kilo\gram} \\
 Depth rating & \SI{100}{\metre} & \SI{100}{\metre} &
@@ -1319,7 +1358,8 @@ Propulsion & prop and fins & prop and fins & eight vectored \\
 Hover and station keep & no & no & to
 \SI{\hydroEnvCad}{\metre\per\second} \\
 Designed for & open water survey & open water survey & flood debris \\
-Cost & order \num{300000} & order \num{150000} & parts \bomTotal{} \\
+Cost, USD & order \num{300000} & order \num{150000} &
+parts \bomTotal{} \\
 \bottomrule
 \end{tabular}
 \end{table}

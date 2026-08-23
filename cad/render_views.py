@@ -356,12 +356,8 @@ def dimensioned(tris, norms, cols, info, geom):
     tb = fig.add_subplot(gs[:, 1])
     title_block(tb, info)
 
-    fig.suptitle("VARUNA-1 principal dimensions", fontsize=17, color=BLUE,
-                 fontweight="bold", y=0.975, x=0.42)
-    fig.text(0.42, 0.938,
-             "orthographic; hull form is a Myring profile, "
-             f"L/D {info['hull_slenderness']:.1f}",
-             ha="center", fontsize=10.5, color="#444")
+    # The title and its subtitle overlapped here, and both repeated the
+    # caption. Removing them fixes the collision and frees the space.
     plt.savefig(f"{OUT}/varuna_dimensioned.png", dpi=155, facecolor="white",
                 bbox_inches="tight")
     plt.close()
@@ -414,12 +410,7 @@ def cutaway():
     place(left, 0.015, "left")
     place(right, 0.985, "right")
 
-    ax.text2D(0.015, 0.965, "Internal arrangement", transform=ax.transAxes,
-              fontsize=18, fontweight="bold", color=BLUE)
-    ax.text2D(0.015, 0.925,
-              "hull opened on the centreline; the faired hull is itself the "
-              "pressure boundary",
-              transform=ax.transAxes, fontsize=10.5, color="#444")
+    # Titled by its caption in the document, not here.
     plt.savefig(f"{OUT}/varuna_cutaway.png", dpi=155, facecolor="white",
                 bbox_inches="tight")
     plt.close()

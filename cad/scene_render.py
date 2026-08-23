@@ -107,21 +107,39 @@ def bed_mesh(site, x0, x1, y0, y1, step, zex=1.0, lit=None,
     return tris, cols
 
 
-def cylinder_mesh(cx, cy, r, z0, z1, n=40, color="#9aa0a6"):
+def cylinder_mesh(cx, cy, r, z0, z1, n=40, color="#9aa0a6", seg=None):
+    """A closed cylinder whose wall is split into short bands.
+
+    The wall used to be one quad per facet spanning the entire height. The
+    painter's sort keys on a triangle centroid, so a pier tens of metres
+    tall sorted on a point half way up itself and was drawn over terrain
+    that stood in front of its base. The buried section reappeared below the
+    bed as a floating stub. Short bands put each centroid near the geometry
+    it actually belongs to.
+    """
     ang = np.linspace(0, 2 * np.pi, n, endpoint=False)
     x, y = cx + r * np.cos(ang), cy + r * np.sin(ang)
     xn, yn = np.roll(x, -1), np.roll(y, -1)
-    lo = np.stack([np.stack([x, y, np.full(n, z0)], -1),
-                   np.stack([xn, yn, np.full(n, z0)], -1),
-                   np.stack([xn, yn, np.full(n, z1)], -1)], -2)
-    hi = np.stack([np.stack([x, y, np.full(n, z0)], -1),
-                   np.stack([xn, yn, np.full(n, z1)], -1),
-                   np.stack([x, y, np.full(n, z1)], -1)], -2)
-    top = np.stack([np.stack([x, y, np.full(n, z1)], -1),
-                    np.stack([xn, yn, np.full(n, z1)], -1),
-                    np.stack([np.full(n, cx), np.full(n, cy),
-                              np.full(n, z1)], -1)], -2)
-    tris = np.concatenate([lo, hi, top])
+    if seg is None:
+        # Bands shorter than the terrain grid spacing, so no band can
+        # straddle enough depth for its centroid to beat the bed.
+        seg = int(np.clip(abs(z1 - z0) / 0.8, 1, 96))
+    edges = np.linspace(z0, z1, seg + 1)
+    parts = []
+    for za, zb in zip(edges[:-1], edges[1:]):
+        a, b = np.full(n, za), np.full(n, zb)
+        parts.append(np.stack([np.stack([x, y, a], -1),
+                               np.stack([xn, yn, a], -1),
+                               np.stack([xn, yn, b], -1)], -2))
+        parts.append(np.stack([np.stack([x, y, a], -1),
+                               np.stack([xn, yn, b], -1),
+                               np.stack([x, y, b], -1)], -2))
+    t = np.full(n, z1)
+    parts.append(np.stack([np.stack([x, y, t], -1),
+                           np.stack([xn, yn, t], -1),
+                           np.stack([np.full(n, cx), np.full(n, cy), t],
+                                    -1)], -2))
+    tris = np.concatenate(parts)
     return tris, np.tile(np.array(to_rgb(color)), (len(tris), 1))
 
 
@@ -214,11 +232,18 @@ def render(ax, layers, elev, azim, zoom=1.0, focal=None):
     allv = tris.reshape(-1, 3)
     lo, hi = allv.min(0), allv.max(0)
     ctr = (lo + hi) / 2
-    rng = (hi - lo).max() / 2 * zoom
-    ax.set_xlim(ctr[0] - rng, ctr[0] + rng)
-    ax.set_ylim(ctr[1] - rng, ctr[1] + rng)
-    ax.set_zlim(ctr[2] - rng, ctr[2] + rng)
-    ax.set_box_aspect((1, 1, 1))
+    # A cube around a scene 116 m long, 88 m wide and a few metres deep
+    # leaves the terrain as a sliver in a mostly empty box. That is what
+    # letterboxed this figure down to a strip when it was cropped to its
+    # ink. Fit each axis to its own extent and give the box the same
+    # proportions, so the projection stays undistorted and the content
+    # fills the frame it is given.
+    span = np.maximum(hi - lo, (hi - lo).max() * 0.04)
+    half = span / 2 * zoom
+    ax.set_xlim(ctr[0] - half[0], ctr[0] + half[0])
+    ax.set_ylim(ctr[1] - half[1], ctr[1] + half[1])
+    ax.set_zlim(ctr[2] - half[2], ctr[2] + half[2])
+    ax.set_box_aspect(tuple(span / span.max()))
     ax.view_init(elev=elev, azim=azim)
     if focal:
         try:
@@ -233,60 +258,98 @@ def main():
     p = f"{LOG}/mission_varuna_s1.npz"
     eta = np.load(p, allow_pickle=True)["eta"] if os.path.exists(p) else None
 
-    fig = plt.figure(figsize=(17.0, 8.4), facecolor="white")
+    # Two panels of very different proportions. Side by side in one figure
+    # they share a bounding box, so cropping to ink is governed by whichever
+    # is flatter and the other is starved. Each gets its own file and its
+    # own crop, and the describing text lives in the caption rather than
+    # being drawn at a size that does not survive scaling to the text width.
 
     # ---------------------------------------------------- wide site view
-    ax = fig.add_subplot(1, 2, 1, projection="3d", facecolor="white")
+    fig = plt.figure(figsize=(9.4, 5.0), facecolor="white")
+    ax = fig.add_subplot(1, 1, 1, projection="3d", facecolor="white")
     ZEX = 2.6
     layers = [bed_mesh(site, -58, 58, -44, 44, 1.3, zex=ZEX)]
     for pr in site.cfg.piers:
         z0 = float(site.bed_height(np.array(0.0), np.array(pr.y))) * ZEX
         top = 2.0 * ZEX if pr.intact else z0 + 3.0 * ZEX
-        layers.append(cylinder_mesh(0.0, pr.y, pr.radius, z0 - 2.0, top,
+        # A token burial below the bed is enough to seat the pier on it.
+        layers.append(cylinder_mesh(0.0, pr.y, pr.radius, z0 - 0.4, top,
                                     color="#9aa0a6" if pr.intact
                                     else "#c2410c"))
     if eta is not None:
         trk = eta[::10, :3].copy()
         trk[:, 2] *= ZEX
         layers.append(polyline_rod(trk, r=0.55, color="#f97316"))
-    render(ax, layers, elev=27, azim=-62, zoom=0.84)
+    render(ax, layers, elev=27, azim=-62, zoom=1.0)
 
-    ax.text2D(0.02, 0.95, "Survey", transform=ax.transAxes, fontsize=15,
-              fontweight="bold", color=BLUE)
-    ax.text2D(0.02, 0.895,
-              f"{site.cfg.x_max - site.cfg.x_min:.0f} by "
-              f"{site.cfg.y_max - site.cfg.y_min:.0f} m reach, four piers, "
-              "one collapsed.\nOrange is the track actually flown. Vertical "
-              f"exaggeration {ZEX:.1f}x.",
-              transform=ax.transAxes, fontsize=9.5, color="#444")
+    plt.tight_layout(pad=0.2)
+    out_a = f"{OUT}/varuna_scene.png"
+    plt.savefig(out_a, dpi=170, facecolor="white", bbox_inches="tight")
+    plt.close()
+    trim_png(out_a)
+    print("wrote", os.path.basename(out_a))
 
     # ---------------------------------------------------- close inspection
-    ax = fig.add_subplot(1, 2, 2, projection="3d", facecolor="white")
+    fig = plt.figure(figsize=(7.6, 5.6), facecolor="white")
+    ax = fig.add_subplot(1, 1, 1, projection="3d", facecolor="white")
     tgt = site.targets["car_1"]
     tx, ty = float(tgt["centre"][0]), float(tgt["centre"][1])
     tsz = np.asarray(tgt["size"], float)
     tbed = float(site.bed_height(np.array(tx), np.array(ty)))
 
-    HALF, PATCH = 5.0, 7.0
+    PATCH = 7.0
     veh = np.array([tx - 4.6, ty - 3.0, tbed + 2.6])
     yaw = np.arctan2(ty - veh[1], tx - veh[0])
 
     # Warm bed so the cyan insonified patch reads as a sensor footprint.
-    L2 = [bed_mesh(site, tx - HALF, tx + HALF, ty - HALF, ty + HALF,
+    # Draw the bed over the whole insonified fan, not a square centred on
+    # the target. The vehicle sits near the corner of that square, so a 130
+    # degree aperture at 7 m range reached well outside it and the wedge
+    # edges ended in mid air with no terrain under them.
+    fan = yaw + np.radians(np.linspace(-FOV_H / 2, FOV_H / 2, 41))
+    fx = veh[0] + PATCH * np.cos(fan)
+    fy = veh[1] + PATCH * np.sin(fan)
+    bx0 = min(fx.min(), veh[0], tx - tsz[0]) - 0.6
+    bx1 = max(fx.max(), veh[0], tx + tsz[0]) + 0.6
+    by0 = min(fy.min(), veh[1], ty - tsz[1]) - 0.6
+    by1 = max(fy.max(), veh[1], ty + tsz[1]) + 0.6
+    L2 = [bed_mesh(site, bx0, bx1, by0, by1,
                    0.14, lit=(veh, yaw, PATCH), cmap="copper_r")]
-    L2.append(box_mesh((tx, ty, tbed + tsz[2] / 2), tsz, yaw=0.5,
-                       color="#475569"))
+    # The target reads as a car rather than an anonymous slab: a lower body
+    # with a cabin set back on it, keeping the overall envelope the site
+    # model actually uses so the figure still shows the modelled object.
+    CAR_YAW = 0.5
+    body_h = tsz[2] * 0.55
+    L2.append(box_mesh((tx, ty, tbed + body_h / 2),
+                       (tsz[0], tsz[1], body_h), yaw=CAR_YAW,
+                       color="#3f4b5b"))
+    cab = (tsz[0] * 0.46, tsz[1] * 0.86, tsz[2] * 0.45)
+    off = -tsz[0] * 0.08
+    L2.append(box_mesh((tx + off * np.cos(CAR_YAW),
+                        ty + off * np.sin(CAR_YAW),
+                        tbed + body_h + cab[2] / 2), cab, yaw=CAR_YAW,
+                       color="#55647a"))
 
-    # Aperture edges, stopped on the bed.
+    # Aperture edges, marched onto the bed the same way the DVL beams are.
+    # Projecting them a fixed distance left them flying above the terrain and
+    # off the top of the frame, because the ray dropped only 0.18 m over
+    # seven metres of ground range instead of following the real depression
+    # onto the patch.
     for sgn in (-1, 1):
         a = yaw + sgn * np.radians(FOV_H / 2)
-        end_p = veh + np.array([np.cos(a), np.sin(a), -0.18]) * PATCH
-        # Keep the edge angled down even where the bed rises toward the
-        # far side of the patch, or it kicks up above the vehicle.
-        end_p[2] = min(max(end_p[2], float(site.bed_height(
-            np.array(end_p[0]), np.array(end_p[1]))) + 0.05),
-            veh[2] - 0.35)
-        L2.append(rod(veh, end_p, r=0.024, color="#0ea5e9"))
+        d = np.array([np.cos(a), np.sin(a), -(veh[2] - tbed) / PATCH])
+        d /= np.linalg.norm(d)
+        hit = veh.copy()
+        # Stop at the patch range whether or not the bed is reached. Where
+        # the bed falls away from the vehicle an edge never intersects it,
+        # and an uncapped march ran the ray straight out of the frame.
+        for _ in range(int(PATCH / 0.04)):
+            nxt = hit + d * 0.04
+            if nxt[2] <= float(site.bed_height(np.array(nxt[0]),
+                                               np.array(nxt[1]))):
+                break
+            hit = nxt
+        L2.append(rod(veh, hit, r=0.024, color="#0ea5e9"))
 
     # The four DVL beams at the 30 degree Janus angle actually modelled.
     for k in range(4):
@@ -310,24 +373,14 @@ def main():
                                                  np.array(sy))) + 0.05])
     L2.append(rod(sb, sb + np.array([2.0, 0, 0]), r=0.04,
                   color="#1f2937"))
-    render(ax, L2, elev=24, azim=-62, zoom=0.72, focal=0.5)
+    render(ax, L2, elev=24, azim=-62, zoom=1.0, focal=0.5)
 
-    ax.text2D(0.02, 0.95, "Detection pass", transform=ax.transAxes,
-              fontsize=15, fontweight="bold", color=BLUE)
-    ax.text2D(0.02, 0.895,
-              "Vehicle at true scale over a submerged car. Cyan is the "
-              f"bed inside the {FOV_H:.0f} degree aperture, green are the "
-              "four DVL beams. Bar is 2 m.",
-              transform=ax.transAxes, fontsize=9.5, color="#444")
-
-    fig.suptitle("VARUNA-1 on station at the modelled collapse site",
-                 fontsize=18, color=BLUE, fontweight="bold", y=0.98)
-    plt.tight_layout(rect=(0, 0, 1, 0.945))
-    out = f"{OUT}/varuna_scene.png"
-    plt.savefig(out, dpi=155, facecolor="white", bbox_inches="tight")
+    plt.tight_layout(pad=0.2)
+    out_b = f"{OUT}/varuna_detection.png"
+    plt.savefig(out_b, dpi=170, facecolor="white", bbox_inches="tight")
     plt.close()
-    trim_png(out)
-    print("wrote", os.path.basename(out))
+    trim_png(out_b)
+    print("wrote", os.path.basename(out_b))
 
 
 if __name__ == "__main__":

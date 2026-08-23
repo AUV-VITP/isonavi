@@ -199,6 +199,14 @@ for _name, _key, _fmt in _CAD:
     cmd(_name, cad.get(_key) if cad else None, _fmt)
 cmd("cadVolErr", abs(cad.get("hull_volume_error_pct", 0.0)) if cad else None,
     "{:.3f}")
+
+# The same two dimensions in metres. The comparison table sets this vehicle
+# against two commercial ones quoted in metres, and converting by hand in the
+# document would put a copy of a generated number back into the source.
+for _n, _k in (("cadLengthM", "hull_length_mm"), ("cadDiaM",
+                                                  "hull_diameter_mm")):
+    _v = cad.get(_k) if cad else None
+    cmd(_n, _v / 1000.0 if _v is not None else None, "{:.2f}")
 # The stability separation the dynamics model assumed before the CAD was built.
 cmd("cadBGAssumed", 85.0, "{:.0f}")
 
@@ -350,6 +358,9 @@ if de:
         s2 = next((r for r in de if r["n_real"] == n and r["arm"] == "sim"), None)
         if c and s2:
             g = (s2["mAP50"] - c["mAP50"]) * 100
+            # The difference column of the table is arithmetic on the pair
+            # above, so it is generated too rather than worked out by hand.
+            cmd(f"deDiff{spell(f'N{n}')}", g, "{:+.1f}")
             if best_gain is None or g > best_gain:
                 best_gain, best_n = g, n
     cmd("deBestGain", best_gain, "{:+.1f}")
@@ -357,6 +368,8 @@ if de:
 else:
     for n in ("deBestGain", "deBestN"):
         cmd(n, None)
+    for n in (40, 80, 160, 320, 640):
+        cmd(f"deDiff{spell(f'N{n}')}", None)
 
 with open(f"{DOCS}/metrics.tex", "w") as fh:
     fh.write("\n".join(lines) + "\n")
