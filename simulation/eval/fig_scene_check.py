@@ -85,20 +85,38 @@ if real_files:
     for k, f in enumerate(real_files):
         img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
         axes[0, k].imshow(img, cmap="inferno")
-        axes[0, k].set_title(f"REAL ARIS 3000\n{os.path.basename(f)[:30]}", fontsize=8)
+        axes[0, k].set_title("Real ARIS 3000", fontsize=9)
         axes[0, k].axis("off")
     acfg = preset("aris", seed=7, ssc_g_per_l=1.0)
     afls = ForwardLookingSonar(acfg, site.scene)
-    aris_views = [
-        [16.0, 6.5, -9.6, 0, np.radians(16), 0.0],
-        [40.0, 3.0, -10.4, 0, np.radians(18), 0.0],
-        [-8.0, -8.0, -9.0, 0, np.radians(14), 0.0],
-        [2.0, 15.0, -9.4, 0, np.radians(15), np.radians(10)],
-    ]
-    for k, pose in enumerate(aris_views):
+    # Stand off, altitude and bearing chosen so the bed return fills the
+    # fan, which is the geometry the real tank captures were taken at. The
+    # previous poses tilted 14 to 18 degrees down from low altitude and
+    # insonified only a band, so the panels were mostly black and did not
+    # show what the caption claims they show.
+    # Each view looks along +y at a target from a short stand off, at
+    # the altitude and tilt that put the object in the middle of a 15 m
+    # fan with bed either side of it. Chosen by rendering the candidates
+    # and looking at them: a filled fan is not the same as a frame that
+    # shows an object and the shadow behind it, and two proxy scores
+    # picked bad frames before this. The bus is absent on purpose. It
+    # sits on the lip of the channel, so every approach sees it edge on
+    # with no bed behind it and no shadow to show.
+    aris_named = []
+    for what, key, stand in (
+            ("submerged car", "car_1", 5.0),
+            ("collapsed deck span", "collapsed_span", 5.0),
+            ("rubble field", "rubble_4", 5.0),
+            ("rubble field at 6.5 m", "rubble_4", 6.5)):
+        tc = np.asarray(site.targets[key]["centre"], float)
+        px, py = float(tc[0]), float(tc[1]) - stand
+        pz = float(site.bed_height(np.array(px), np.array(py))) + 3.0
+        aris_named.append((what, [px, py, pz, 0.0, np.radians(10.0),
+                                  np.radians(90.0)]))
+    for k, (what, pose) in enumerate(aris_named):
         fr = afls.ping(pose)
         axes[1, k].imshow(fr.to_cartesian(430), cmap="inferno")
-        axes[1, k].set_title("SIMULATED (this work)", fontsize=8)
+        axes[1, k].set_title(f"Simulated, this work: {what}", fontsize=9)
         axes[1, k].axis("off")
     plt.tight_layout()
     plt.savefig(f"{OUT}/real_vs_sim.png", dpi=125)

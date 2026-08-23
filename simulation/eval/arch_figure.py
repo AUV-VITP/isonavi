@@ -26,6 +26,12 @@ LINE = 0.038
 PAD = 0.030
 
 
+# The rounded box style paints this far outside the rectangle asked
+# for. Connectors have to start and stop clear of it or their heads
+# are drawn over by the box next door.
+BOXPAD = 0.012
+
+
 def box_height(lines):
     """Height that actually fits the header plus every content line."""
     return HEAD + LINE * len(lines) + PAD
@@ -37,7 +43,7 @@ def box(ax, x, y, w, title, lines, kind, fs=8.4, h=None):
     h = box_height(lines) if h is None else h
     c = COLS[kind]
     ax.add_patch(FancyBboxPatch((x, y), w, h,
-                                boxstyle="round,pad=0.012,rounding_size=0.02",
+                                boxstyle=f"round,pad={BOXPAD},rounding_size=0.02",
                                 fc="white", ec=c, lw=1.5, zorder=3))
     ax.add_patch(FancyBboxPatch((x, y + h - 0.052), w, 0.052,
                                 boxstyle="round,pad=0.012,rounding_size=0.02",
@@ -48,6 +54,20 @@ def box(ax, x, y, w, title, lines, kind, fs=8.4, h=None):
         ax.text(x + 0.014, y + h - HEAD - 0.020 - i * LINE, ln,
                 ha="left", va="center", fontsize=fs - 0.6, color=INK, zorder=5)
     return h
+
+
+
+def wrap_arrow(ax, x_from, y_from, x_to, y_to, band, col=MUTED):
+    """Flow connector from the end of one row to the start of the next.
+
+    Drawn as three straight segments through the clear band between the rows,
+    because a single arc passes beneath the middle boxes and is hidden by them.
+    """
+    ax.plot([x_from, x_from], [y_from, band], color=col, lw=1.3, zorder=2)
+    ax.plot([x_from, x_to], [band, band], color=col, lw=1.3, zorder=2)
+    ax.add_patch(FancyArrowPatch((x_to, band), (x_to, y_to),
+                                 arrowstyle="-|>", mutation_scale=13,
+                                 lw=1.3, color=col, zorder=2))
 
 
 def arrow(ax, p0, p1, label=None, style="-|>", col=MUTED, rad=0.0, fs=7.4):
@@ -129,12 +149,8 @@ ax.text(0.935, 0.545 + h_mis + 0.030,
         "dashed: runs on the RISC-V flight computer",
         fontsize=8.6, color="#111827", ha="right", style="italic")
 
-ax.text(0.015, 1.085, "VARUNA system architecture", fontsize=15,
-        fontweight="bold", color=INK)
-ax.text(0.015, 1.045,
-        "Closed loop. Everything the vehicle acts on is estimated, never taken "
-        "from the simulator ground truth.",
-        fontsize=9.2, color=MUTED)
+# No title or subtitle here: the figure carries a caption in the document
+# that says the same thing, and repeating it wastes the space the boxes need.
 
 handles = [plt.Line2D([], [], marker="s", ls="", ms=9, color=COLS[k], label=v)
            for k, v in (("world", "environment"), ("sense", "sensing"),
@@ -150,7 +166,7 @@ plt.close()
 # Keep the same vertical scale as the architecture figure: the rounded box
 # geometry is expressed in axis units, so a squashed y-range would compress
 # the header band into the first line of text.
-fig, ax = plt.subplots(figsize=(16.5, 4.6))
+fig, ax = plt.subplots(figsize=(11.0, 7.4))
 ax.set_xlim(0, 1); ax.set_ylim(0, 1); ax.axis("off")
 
 stages = [
@@ -164,24 +180,28 @@ stages = [
     ("Speckle", ["Gamma, L looks", "plus noise floor"]),
     ("Display", ["time-varying gain", "polar or fan"]),
 ]
-n = len(stages)
-gap = 0.016
-w = (1.0 - (n + 1) * gap) / n
-y = 0.34
-for i, (title, lines) in enumerate(stages):
-    x = gap + i * (w + gap)
-    kind = "sense" if i < 2 else ("estimate" if i < 5 else "act")
-    h = box(ax, x, y, w, title, lines, kind, fs=7.6)
-    if i < n - 1:
-        arrow(ax, (x + w, y + h / 2), (x + w + gap, y + h / 2))
 
-ax.text(0.0, 0.70, "Sonar image formation", fontsize=14, fontweight="bold",
-        color=INK)
-ax.text(0.0, 0.63,
-        "Every stage is a physical effect rather than a rendering convenience. "
-        "Shadow comes from occlusion, elevation ambiguity from summing "
-        "elevation rays, and texture from coherent speckle.",
-        fontsize=9, color=MUTED)
+COLS_N, GAP = 3, 0.045
+W = (1.0 - (COLS_N + 1) * GAP) / COLS_N
+H = box_height(stages[0][1])
+ROW_Y = [0.70, 0.38, 0.06]
+
+for i, (title, lines) in enumerate(stages):
+    r, c = divmod(i, COLS_N)
+    x = GAP + c * (W + GAP)
+    y = ROW_Y[r]
+    kind = "sense" if i < 2 else ("estimate" if i < 5 else "act")
+    box(ax, x, y, W, title, lines, kind, fs=10.4)
+    if c < COLS_N - 1:
+        arrow(ax, (x + W + BOXPAD, y + H / 2),
+              (x + W + GAP - BOXPAD, y + H / 2))
+    elif r < len(ROW_Y) - 1:
+        top_next = ROW_Y[r + 1] + H
+        wrap_arrow(ax, x + W / 2, y - BOXPAD, GAP + W / 2,
+                   top_next + BOXPAD, band=(y + top_next) / 2)
+
+# Crop the axes to what is actually drawn in them.
+ax.set_ylim(ROW_Y[-1] - 0.035, ROW_Y[0] + H + 0.035)
 plt.tight_layout()
 plt.savefig(f"{FIG}/f0b_sonar_pipeline.png", bbox_inches="tight")
 plt.close()
