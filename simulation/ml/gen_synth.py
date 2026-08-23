@@ -16,8 +16,8 @@ import shutil
 import numpy as np
 from PIL import Image
 
-from varuna.validation import labelled_tank_frame, DATASET_CLASSES
-from varuna.acoustics import preset
+from isonavi.validation import labelled_tank_frame, DATASET_CLASSES
+from isonavi.acoustics import preset
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--n-train", type=int, default=2400)

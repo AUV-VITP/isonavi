@@ -5,7 +5,7 @@ exists for Indian flood scenarios and none will exist before deployment, so
 the question that matters is whether a physics based simulator can serve as
 the training source for a detector that then works on real acoustic imagery.
 
-Training set : frames from the VARUNA sonar simulator, labels derived
+Training set : frames from the isonavi sonar simulator, labels derived
                analytically from scene geometry, no human annotation
 Test set     : the real ARIS Explorer 3000 held-out split, untouched
 

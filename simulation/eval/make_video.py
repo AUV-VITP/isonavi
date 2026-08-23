@@ -22,9 +22,9 @@ import numpy as np
 from matplotlib.gridspec import GridSpec
 from matplotlib.patches import Circle, Rectangle
 
-from varuna.scene import DisasterSite
-from varuna.acoustics import ForwardLookingSonar, preset
-from varuna.mapping import BathymetryMap
+from isonavi.scene import DisasterSite
+from isonavi.acoustics import ForwardLookingSonar, preset
+from isonavi.mapping import BathymetryMap
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOG, VID = f"{ROOT}/results/logs", f"{ROOT}/results/video"
@@ -34,7 +34,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument("--fps", type=int, default=30)
 ap.add_argument("--seconds", type=float, default=45.0)
 ap.add_argument("--dpi", type=int, default=100)
-ap.add_argument("--tag", default="varuna_s1")
+ap.add_argument("--tag", default="isonavi_s1")
 args = ap.parse_args()
 
 d = np.load(f"{LOG}/mission_{args.tag}.npz", allow_pickle=True)
@@ -196,7 +196,7 @@ for fi, k in enumerate(idx):
                          transform=axt.transAxes)
                 break
 
-    fig.suptitle("VARUNA   autonomous underwater reconnaissance and assessment",
+    fig.suptitle("isonavi   autonomous underwater reconnaissance and assessment",
                  x=0.045, ha="left", fontsize=15, color=FG, y=0.965)
     fig.text(0.985, 0.965,
              "Savitri river post-collapse scenario   2.4 m/s current   3.2 g/L sediment",
@@ -208,12 +208,12 @@ for fi, k in enumerate(idx):
         print(f"  frame {fi}/{n_frames}  t={now:.0f}s  {phase[k]}  "
               f"{bm.n_soundings} soundings", flush=True)
 
-out = f"{VID}/varuna_mission.mp4"
+out = f"{VID}/isonavi_mission.mp4"
 subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(args.fps),
                 "-i", f"{frames_dir}/f%05d.png", "-c:v", "libx264",
                 "-pix_fmt", "yuv420p", "-crf", "20", "-movflags", "+faststart",
                 out], check=True)
 subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", out, "-vf",
-                "fps=10,scale=1000:-1:flags=lanczos", f"{VID}/varuna_mission.gif"],
+                "fps=10,scale=1000:-1:flags=lanczos", f"{VID}/isonavi_mission.gif"],
                check=False)
 print("wrote", out, os.path.getsize(out) // 1024, "kB")

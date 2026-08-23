@@ -24,10 +24,10 @@ import time
 import paramiko
 
 IP = "10.133.84.1"
-sys.path.insert(0, "/home/aadi/dev/rakshatech/hil")
-sys.path.insert(0, "/home/aadi/dev/rakshatech/hil/host")
-sys.path.insert(0, "/home/aadi/dev/rakshatech/hil/common")
-sys.path.insert(0, "/home/aadi/dev/rakshatech/simulation")
+sys.path.insert(0, "/home/aadi/dev/isonavi/hil")
+sys.path.insert(0, "/home/aadi/dev/isonavi/hil/host")
+sys.path.insert(0, "/home/aadi/dev/isonavi/hil/common")
+sys.path.insert(0, "/home/aadi/dev/isonavi/simulation")
 
 
 # Reverse tunnel destinations, keyed by the port the board connects to.
@@ -88,7 +88,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=5557)
     ap.add_argument("--max-time", type=float, default=1000.0)
-    ap.add_argument("--out", default="/home/aadi/dev/rakshatech/hil/results/hil_run.npz")
+    ap.add_argument("--out", default="/home/aadi/dev/isonavi/hil/results/hil_run.npz")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--esp-bridge", default="",
                     help="host:port of the Windows side ESP32 bridge")

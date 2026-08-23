@@ -1,4 +1,4 @@
-"""Bill of materials for one VARUNA-1 airframe.
+"""Bill of materials for one isonavi-1 airframe.
 
 Prototype quantity, one unit. This is a materials and bought-in equipment cost
 only: it excludes design labour, integration, test, tooling and certification,
@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 import os
 
-import varuna_layout as L
+import isonavi_layout as L
 
 USD_INR = 84.0          # indicative, mid market
 
@@ -76,7 +76,7 @@ def main():
     parts, geom, v_hull = L.solve_layout()
     rows, groups, total = rollup()
 
-    print("VARUNA-1 bill of materials, one airframe, prototype quantity")
+    print("isonavi-1 bill of materials, one airframe, prototype quantity")
     print("=" * 88)
     print(f"{'item':56s}{'qty':>4}{'unit USD':>11}{'ext USD':>12}")
     print("-" * 88)
@@ -120,7 +120,7 @@ def main():
         "comparators": {n: p for n, p, _ in COMPARATORS},
     }
     p = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                     "varuna_bom.json")
+                     "isonavi_bom.json")
     json.dump(out, open(p, "w"), indent=1)
     print(f"\n  wrote {os.path.basename(p)}")
     return out

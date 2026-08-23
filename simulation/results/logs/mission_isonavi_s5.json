@@ -1,14 +1,14 @@
 {
- "duration": 896.6499999997322,
- "path_length": 576.3750550181496,
- "nav_error_mean": 0.44370963808633657,
- "nav_error_final": 0.08711622979890568,
- "nav_error_max": 0.8423244528010267,
- "sigma_final": 0.2848483324563368,
- "dvl_availability": 0.9585145533623285,
- "coverage": 0.9504741833508957,
- "soundings": 12969645,
- "pings": 1396,
+ "duration": 894.8999999997338,
+ "path_length": 574.5944262609808,
+ "nav_error_mean": 0.14663518403427403,
+ "nav_error_final": 0.1663128706349177,
+ "nav_error_max": 0.3668227774534369,
+ "sigma_final": 0.2836394862041489,
+ "dvl_availability": 0.9631243714381496,
+ "coverage": 0.9558599695585996,
+ "soundings": 12956903,
+ "pings": 1394,
  "phases_reached": [
   "DEPLOY",
   "ACQUIRE",
@@ -18,102 +18,102 @@
   "REPORT",
   "DONE"
  ],
- "vehicle": "VARUNA-1 (faired, high-thrust)",
- "seed": 4,
- "wall_clock_s": 259.9902471560001,
+ "vehicle": "isonavi-1 (faired, high-thrust)",
+ "seed": 5,
+ "wall_clock_s": 287.864753585,
  "max_holdable_current": 2.931118818792321,
  "site_surface_current": 2.4,
  "ssc_g_per_l": 3.2,
  "scour": {
   "P2": {
-   "datum_z": -13.269535372420727,
-   "max_depth": 3.004570638372086,
-   "volume": 288.7450453160115,
-   "cells": 1422.0,
-   "coverage": 0.9820441988950276,
+   "datum_z": -13.26996574691583,
+   "max_depth": 3.0110694675594694,
+   "volume": 290.2549472759896,
+   "cells": 1426.0,
+   "coverage": 0.9848066298342542,
    "truth_depth": 3.4,
    "truth_volume": 321.332568584676
   },
   "P3": {
-   "datum_z": -13.35931557691215,
-   "max_depth": 1.7605464331279859,
-   "volume": 108.09474494289984,
-   "cells": 929.0,
-   "coverage": 0.9882978723404255,
+   "datum_z": -13.36715103500253,
+   "max_depth": 1.7504150484950556,
+   "volume": 106.44239265913338,
+   "cells": 928.0,
+   "coverage": 0.9872340425531915,
    "truth_depth": 2.1,
    "truth_volume": 123.70021073509811
   }
  },
  "events": [
   {
-   "t": 13.65,
+   "t": 13.7,
    "phase": "ACQUIRE",
    "msg": "phase -> ACQUIRE"
   },
   {
-   "t": 19.65,
+   "t": 19.7,
    "phase": "ACQUIRE",
    "msg": "DVL bottom lock, horiz sigma 0.14 m"
   },
   {
-   "t": 19.65,
+   "t": 19.7,
    "phase": "ACQUIRE",
    "msg": "search plan: 10 waypoints, 9.0 m line spacing"
   },
   {
-   "t": 19.65,
+   "t": 19.7,
    "phase": "SEARCH",
    "msg": "phase -> SEARCH"
   },
   {
-   "t": 484.8,
+   "t": 483.15,
    "phase": "SEARCH",
-   "msg": "search complete, coverage 94.4 %"
+   "msg": "search complete, coverage 94.9 %"
   },
   {
-   "t": 484.8,
+   "t": 483.15,
    "phase": "SEARCH",
    "msg": "inspect P2: orbit r=8.0 m, 14 stations"
   },
   {
-   "t": 484.8,
+   "t": 483.15,
    "phase": "INSPECT",
    "msg": "phase -> INSPECT"
   },
   {
-   "t": 658.15,
+   "t": 656.45,
    "phase": "INSPECT",
-   "msg": "P2 scour: depth 3.00 m, volume 288.7 m3"
+   "msg": "P2 scour: depth 3.01 m, volume 290.3 m3"
   },
   {
-   "t": 658.15,
+   "t": 656.45,
    "phase": "INSPECT",
    "msg": "inspect P3: orbit r=8.0 m, 14 stations"
   },
   {
-   "t": 747.4,
+   "t": 746.35,
    "phase": "INSPECT",
-   "msg": "P3 scour: depth 1.76 m, volume 108.1 m3"
+   "msg": "P3 scour: depth 1.75 m, volume 106.4 m3"
   },
   {
-   "t": 747.4,
+   "t": 746.35,
    "phase": "RETURN",
    "msg": "phase -> RETURN"
   },
   {
-   "t": 896.55,
+   "t": 894.8,
    "phase": "REPORT",
    "msg": "phase -> REPORT"
   },
   {
-   "t": 896.6,
+   "t": 894.85,
    "phase": "DONE",
    "msg": "phase -> DONE"
   },
   {
-   "t": 896.65,
+   "t": 894.9,
    "phase": "DONE",
-   "msg": "mission ended in phase DONE at t=896.6 s"
+   "msg": "mission ended in phase DONE at t=894.9 s"
   }
  ],
  "tracks": []

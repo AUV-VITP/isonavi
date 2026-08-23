@@ -24,7 +24,7 @@ import json
 import math
 import os
 
-import varuna_layout as L
+import isonavi_layout as L
 
 RHO = 1000.0
 NU = 1.0e-6            # kinematic viscosity of water, m2/s
@@ -57,7 +57,7 @@ def bare_hull_drag(geom, v=V_REF):
 
 
 # ------------------------------------------------------------------ appendages
-# Dimensions as modelled in varuna_cad.py.
+# Dimensions as modelled in isonavi_cad.py.
 DUCT_D, DUCT_L = 0.100, 0.088
 DUCT_DV, DUCT_LV = 0.092, 0.080
 PYLON_CHORD, PYLON_THICK = 0.052, 0.017
@@ -137,13 +137,13 @@ def added_mass(geom):
 # ------------------------------------------------------------------ report
 def main():
     parts, geom, v_hull = L.solve_layout()
-    from varuna_layout import TARGET_MASS
+    from isonavi_layout import TARGET_MASS
 
     hull_x, hull_info = bare_hull_drag(geom)
     app_x, items = appendage_drag()
     total_x = hull_x + app_x
 
-    print("VARUNA-1 hydrodynamic coefficients from the CAD geometry")
+    print("isonavi-1 hydrodynamic coefficients from the CAD geometry")
     print("=" * 72)
     print(f"  reference speed {V_REF:.1f} m/s, "
           f"Re {hull_info['re']:.2e}, Cf {hull_info['cf']:.5f}, "
@@ -183,12 +183,12 @@ def main():
     import sys
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
         os.path.abspath(__file__))), "simulation"))
-    from varuna.dynamics import VARUNA_1, vectored_allocation
+    from isonavi.dynamics import isonavi_1, vectored_allocation
     import numpy as np
-    B = vectored_allocation(VARUNA_1.arms)
-    f = np.full(8, VARUNA_1.max_thrust_n)
+    B = vectored_allocation(isonavi_1.arms)
+    f = np.full(8, isonavi_1.max_thrust_n)
     surge_max = float(abs((B @ f)[0]))
-    lin = VARUNA_1.lin_damp[0]
+    lin = isonavi_1.lin_damp[0]
     site_current = 2.4
 
     def envelope(quad):
@@ -228,7 +228,7 @@ def main():
         "slenderness": aminfo["slenderness"],
     }
     p = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                     "varuna_hydro.json")
+                     "isonavi_hydro.json")
     json.dump(out, open(p, "w"), indent=1)
     print(f"\n  wrote {os.path.basename(p)}")
     return out

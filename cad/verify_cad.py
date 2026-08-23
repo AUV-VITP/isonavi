@@ -16,8 +16,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import varuna_cad as V
-import varuna_layout as L
+import isonavi_cad as V
+import isonavi_layout as L
 
 MM = 1000.0
 FAILURES = []
@@ -39,7 +39,7 @@ def main():
     c = hull.val().Center()
     vol = hull.val().Volume() / MM ** 3
 
-    print("VARUNA-1 CAD verification")
+    print("isonavi-1 CAD verification")
     print("=" * 78)
 
     print("\n built geometry against the analytic solve")

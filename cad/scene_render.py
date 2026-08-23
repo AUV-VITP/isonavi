@@ -29,11 +29,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "simulation"))
 
 import render_views as RV
-import varuna_cad as V
-from varuna.scene import DisasterSite
+import isonavi_cad as V
+from isonavi.scene import DisasterSite
 
-OUT = os.path.expanduser("~/dev/rakshatech/cad")
-LOG = os.path.expanduser("~/dev/rakshatech/simulation/results/logs")
+OUT = os.path.expanduser("~/dev/isonavi/cad")
+LOG = os.path.expanduser("~/dev/isonavi/simulation/results/logs")
 MM = 1000.0
 BLUE = "#16407A"
 
@@ -255,7 +255,7 @@ def render(ax, layers, elev, azim, zoom=1.0, focal=None):
 
 def main():
     site = DisasterSite()
-    p = f"{LOG}/mission_varuna_s1.npz"
+    p = f"{LOG}/mission_isonavi_s1.npz"
     eta = np.load(p, allow_pickle=True)["eta"] if os.path.exists(p) else None
 
     # Two panels of very different proportions. Side by side in one figure
@@ -283,7 +283,7 @@ def main():
     render(ax, layers, elev=27, azim=-62, zoom=1.0)
 
     plt.tight_layout(pad=0.2)
-    out_a = f"{OUT}/varuna_scene.png"
+    out_a = f"{OUT}/isonavi_scene.png"
     plt.savefig(out_a, dpi=170, facecolor="white", bbox_inches="tight")
     plt.close()
     trim_png(out_a)
@@ -376,7 +376,7 @@ def main():
     render(ax, L2, elev=24, azim=-62, zoom=1.0, focal=0.5)
 
     plt.tight_layout(pad=0.2)
-    out_b = f"{OUT}/varuna_detection.png"
+    out_b = f"{OUT}/isonavi_detection.png"
     plt.savefig(out_b, dpi=170, facecolor="white", bbox_inches="tight")
     plt.close()
     trim_png(out_b)

@@ -4,7 +4,7 @@ Optical object detection and condition classification for underwater
 inspection: a YOLO11n detector and a MobileNetV3 condition classifier, with
 trained ONNX weights and evaluation reports.
 
-**This work is deliberately not part of the RakshaTech submission.** That is a
+**This work is deliberately not part of the isonavi proposal.** That is a
 scoping decision about the proposal, not a judgement of the work, and the
 reasoning belongs on the record rather than in anyone's head.
 

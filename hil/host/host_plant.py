@@ -31,11 +31,11 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import common.hil_protocol as P  # noqa: E402
-from varuna.scene import DisasterSite  # noqa: E402
-from varuna.dynamics import VehicleDynamics, VARUNA_1  # noqa: E402
-from varuna.sensors import SensorSuite  # noqa: E402
-from varuna.control import CurrentEstimator  # noqa: E402
-from varuna.mapping import BathymetryMap  # noqa: E402
+from isonavi.scene import DisasterSite  # noqa: E402
+from isonavi.dynamics import VehicleDynamics, isonavi_1  # noqa: E402
+from isonavi.sensors import SensorSuite  # noqa: E402
+from isonavi.control import CurrentEstimator  # noqa: E402
+from isonavi.mapping import BathymetryMap  # noqa: E402
 
 
 class HostPlant:
@@ -44,7 +44,7 @@ class HostPlant:
         launch = np.array((-46.0, -2.0, -3.0), float)
         yaw0 = CurrentEstimator.heading_into_flow(
             self.site.current_at(launch)) or np.pi
-        self.dyn = VehicleDynamics(VARUNA_1, current_fn=self.site.current_at)
+        self.dyn = VehicleDynamics(isonavi_1, current_fn=self.site.current_at)
         self.dyn.reset(eta=[*launch, 0, 0, yaw0])
         self.sens = SensorSuite(site=self.site, seed=seed + 11)
         self.dt = 0.05

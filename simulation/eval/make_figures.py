@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Circle
 
-from varuna.scene import DisasterSite
-from varuna.dynamics import (BLUEROV2_HEAVY, VARUNA_1, max_holdable_current,
+from isonavi.scene import DisasterSite
+from isonavi.dynamics import (BLUEROV2_HEAVY, isonavi_1, max_holdable_current,
                              vectored_allocation)
-from varuna.acoustics import ForwardLookingSonar, preset
+from isonavi.acoustics import ForwardLookingSonar, preset
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIG = f"{ROOT}/results/figures"
@@ -28,8 +28,8 @@ ACC = "#1f6feb"
 WARN = "#d1242f"
 GOOD = "#1a7f37"
 
-d = np.load(f"{LOG}/mission_varuna_s1.npz", allow_pickle=True)
-summary = json.load(open(f"{LOG}/mission_varuna_s1.json"))
+d = np.load(f"{LOG}/mission_isonavi_s1.npz", allow_pickle=True)
+summary = json.load(open(f"{LOG}/mission_isonavi_s1.json"))
 site = DisasterSite()
 
 t = d["t"]; eta = d["eta"]; est = d["est_pos"]; phase = d["phase"]
@@ -121,8 +121,8 @@ ax[1].legend(fontsize=8)
 ax[2].plot(t, d["current"], color="#8250df", lw=1.1, label="estimated current")
 true_c = np.linalg.norm(site.current(eta[:, 0], eta[:, 1], eta[:, 2]), axis=-1)
 ax[2].plot(t, true_c, color="k", lw=1.0, ls="--", label="true current")
-ax[2].axhline(max_holdable_current(VARUNA_1), color=GOOD, lw=0.9,
-              label=f"VARUNA envelope {max_holdable_current(VARUNA_1):.2f} m/s")
+ax[2].axhline(max_holdable_current(isonavi_1), color=GOOD, lw=0.9,
+              label=f"isonavi envelope {max_holdable_current(isonavi_1):.2f} m/s")
 ax[2].axhline(max_holdable_current(BLUEROV2_HEAVY), color=WARN, lw=0.9,
               label=f"COTS envelope {max_holdable_current(BLUEROV2_HEAVY):.2f} m/s")
 ax[2].set_ylabel("current (m/s)"); ax[2].set_xlabel("mission time (s)")
@@ -211,7 +211,7 @@ plt.tight_layout(); plt.savefig(f"{FIG}/f4_scour.png"); plt.close()
 # =====================================================================  fig 5
 fig, ax = plt.subplots(1, 2, figsize=(13, 4.6))
 v = np.linspace(0, 3.6, 250)
-for p, col in ((BLUEROV2_HEAVY, WARN), (VARUNA_1, GOOD)):
+for p, col in ((BLUEROV2_HEAVY, WARN), (isonavi_1, GOOD)):
     drag = p.quad_damp[0] * v ** 2 + p.lin_damp[0] * v
     B = vectored_allocation(p.arms)
     f_unit = np.max(np.abs(np.linalg.pinv(B) @ np.array([1.0, 0, 0, 0, 0, 0])))
@@ -232,12 +232,12 @@ ax[0].set_title("Thrust envelope against hydrodynamic drag")
 ax[0].legend(fontsize=7.5, loc="upper left")
 
 ax[1].plot(t, d["thrust"], color=ACC, lw=0.9)
-ax[1].axhline(VARUNA_1.max_thrust_n, color=WARN, ls="--", lw=1.0,
-              label=f"per-thruster limit {VARUNA_1.max_thrust_n:.0f} N")
+ax[1].axhline(isonavi_1.max_thrust_n, color=WARN, ls="--", lw=1.0,
+              label=f"per-thruster limit {isonavi_1.max_thrust_n:.0f} N")
 shade_phases(ax[1])
 ax[1].set_xlabel("mission time (s)"); ax[1].set_ylabel("peak thruster force (N)")
 ax[1].set_title(f"Thruster utilisation, mean "
-                f"{np.mean(d['thrust'])/VARUNA_1.max_thrust_n*100:.0f} % of limit")
+                f"{np.mean(d['thrust'])/isonavi_1.max_thrust_n*100:.0f} % of limit")
 ax[1].legend(fontsize=8)
 plt.tight_layout(); plt.savefig(f"{FIG}/f5_vehicle.png"); plt.close()
 

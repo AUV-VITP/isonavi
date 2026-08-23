@@ -18,7 +18,7 @@ import os
 import re
 import sys
 
-ROOT = os.path.expanduser("~/dev/rakshatech")
+ROOT = os.path.expanduser("~/dev/isonavi")
 DOCS = os.path.join(ROOT, "docs")
 METRICS = os.path.join(DOCS, "metrics.tex")
 
@@ -49,11 +49,58 @@ def body_of(path):
     return "\n".join(re.sub(r"(?<!\\)%.*$", "", ln) for ln in s.splitlines())
 
 
+
+# Headline numbers quoted in the readme, pinned to the macro that generates
+# them. The readme is plain text, so nothing else stops it going stale while
+# the experiments move underneath it.
+README_PINS = [
+    ("hydroEnvCad", "2.69"),
+    ("siteCurrent", "2.4"),
+    ("misPath", "573"),
+    ("misDuration", "893"),
+    ("repCoverMean", "95.3"),
+    ("repNavMeanMean", "0.322"),
+    ("repNavMeanStd", "0.161"),
+    ("repDvlMean", "96.0"),
+    ("repMapRmseMean", "0.285"),
+    ("repDetErrMean", "1.80"),
+    ("repDetErrStd", "0.40"),
+    ("yoloTestMapFifty", "99.0"),
+    ("hilNavMean", "0.107"),
+    ("hilTicks", "17,884"),
+    ("boardComputeMean", "34.6"),
+    ("cadMass", "28.0"),
+    ("cadNetBuoy", "1.96"),
+    ("cadBG", "27.6"),
+    ("structDepth", "50"),
+    ("bomTotal", "32,825"),
+]
+
+
+def check_readme(macros):
+    """Every pinned readme figure must equal the macro that produces it."""
+    path = os.path.join(ROOT, "README.md")
+    if not os.path.exists(path):
+        return []
+    body = open(path, encoding="utf-8").read()
+    bad = []
+    for name, quoted in README_PINS:
+        generated = macros.get(name)
+        if generated is None:
+            bad.append(f"README pin \\{name} has no generated macro")
+        elif generated != quoted:
+            bad.append(f"README pin \\{name}: readme expects {quoted}, "
+                       f"metrics.tex now says {generated}")
+        elif quoted not in body:
+            bad.append(f"README no longer quotes {quoted} for \\{name}")
+    return bad
+
+
 def main():
     macros = load_macros()
     print(f"{len(macros)} generated macros")
 
-    docs = [p for p in ("varuna_report.tex", "varuna_brief.tex")
+    docs = [p for p in ("isonavi_report.tex", "isonavi_brief.tex")
             if os.path.exists(os.path.join(DOCS, p))]
     problems, warnings = [], []
     used = set()
@@ -91,6 +138,8 @@ def main():
                 warnings.append(f"{name}: literal {lit} also available as "
                                 f"\\{hits[0]}")
 
+    problems.extend(check_readme(macros))
+
     unused = sorted(set(macros) - used)
 
     if warnings:
@@ -110,7 +159,7 @@ def main():
             print("  " + p)
         return 1
 
-    print("\nno undefined macros, no missing figures")
+    print("\nno undefined macros, no missing figures, readme in step")
     return 0
 
 

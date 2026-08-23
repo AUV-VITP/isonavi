@@ -1,4 +1,4 @@
-"""Energy and endurance budget for VARUNA-1.
+"""Energy and endurance budget for isonavi-1.
 
 Endurance is the question a hovering vehicle answers worst, because holding
 station in a current costs full thrust while doing no useful work. It is
@@ -25,7 +25,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-import varuna_layout as L
+import isonavi_layout as L
 
 RHO = 1000.0
 BATTERY_WH = 1500.0        # 14S4P lithium ion, as in the bill of materials
@@ -78,7 +78,7 @@ def prop_power(thrust_n):
 
 def station_keeping_thrust(v):
     """Total thrust needed to hold station against a current of v."""
-    from varuna_layout import TARGET_MASS  # noqa: F401
+    from isonavi_layout import TARGET_MASS  # noqa: F401
     lin, quad = 22.0, 38.9      # surge damping, CAD derived quadratic term
     return lin * v + quad * v * v
 
@@ -134,7 +134,7 @@ def figure(out, log):
 
     plt.tight_layout()
     p_out = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         "varuna_energy.png")
+                         "isonavi_energy.png")
     plt.savefig(p_out, dpi=150, facecolor="white", bbox_inches="tight")
     plt.close()
     trim_png(p_out)
@@ -144,10 +144,10 @@ def figure(out, log):
 def main():
     log = os.path.join(os.path.dirname(os.path.dirname(
         os.path.abspath(__file__))),
-        "simulation", "results", "logs", "mission_varuna_s1.npz")
+        "simulation", "results", "logs", "mission_isonavi_s1.npz")
     hotel_w = sum(HOTEL.values())
 
-    print("VARUNA-1 energy and endurance")
+    print("isonavi-1 energy and endurance")
     print("=" * 70)
     print(f"  battery {BATTERY_WH:.0f} Wh, {USABLE * 100:.0f} percent usable, "
           f"{BATTERY_WH * USABLE:.0f} Wh available")
@@ -209,7 +209,7 @@ def main():
     print("  the mission plan works the flow rather than ignoring it.")
 
     p = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                     "varuna_energy.json")
+                     "isonavi_energy.json")
     json.dump(out, open(p, "w"), indent=1)
     print(f"\n  wrote {os.path.basename(p)}")
     figure(out, log)

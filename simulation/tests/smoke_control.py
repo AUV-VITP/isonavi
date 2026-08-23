@@ -1,12 +1,12 @@
 """Verify dynamics, estimation and control against physical expectations."""
 import numpy as np
 
-from varuna.dynamics import (VehicleDynamics, VehicleParams, vectored_allocation,
-                             BLUEROV2_HEAVY, VARUNA_1, max_holdable_current)
-from varuna.sensors import SensorSuite
-from varuna.estimation import NavigationEKF
-from varuna.control import PoseController, ControlGains, VARUNA_GAINS, CurrentEstimator
-from varuna.scene import DisasterSite
+from isonavi.dynamics import (VehicleDynamics, VehicleParams, vectored_allocation,
+                             BLUEROV2_HEAVY, isonavi_1, max_holdable_current)
+from isonavi.sensors import SensorSuite
+from isonavi.estimation import NavigationEKF
+from isonavi.control import PoseController, ControlGains, isonavi_GAINS, CurrentEstimator
+from isonavi.scene import DisasterSite
 
 ok = lambda c, m: print(("  PASS  " if c else "  FAIL  ") + m)
 print("=" * 64)
@@ -67,7 +67,7 @@ print()
 yaw_into_flow = CurrentEstimator.heading_into_flow(site.current_at(station)) or 0.0
 print(f"  commanded heading          : {np.degrees(yaw_into_flow):.0f} deg (into flow)")
 print()
-for params, gains in ((BLUEROV2_HEAVY, ControlGains()), (VARUNA_1, VARUNA_GAINS)):
+for params, gains in ((BLUEROV2_HEAVY, ControlGains()), (isonavi_1, isonavi_GAINS)):
     envelope = max_holdable_current(params)
     dyn = VehicleDynamics(params, current_fn=site.current_at)
     dyn.reset(eta=[*station, 0, 0, yaw_into_flow])
@@ -96,11 +96,11 @@ print()
 print("=" * 64)
 print("4. EKF TRACKING (closed loop, real sensors)")
 print("=" * 64)
-dyn = VehicleDynamics(VARUNA_1, current_fn=site.current_at)
+dyn = VehicleDynamics(isonavi_1, current_fn=site.current_at)
 dyn.reset(eta=[-30.0, -8.0, -9.0, 0, 0, np.pi])
 sens = SensorSuite(site=site, seed=5)
 ekf = NavigationEKF(p0=[-30.0, -8.0, -9.0])
-ctl = PoseController(VARUNA_GAINS, params=VARUNA_1)
+ctl = PoseController(isonavi_GAINS, params=isonavi_1)
 dt = 0.02
 t = 0.0
 wps = [np.array([-30.0, -8.0, -9.0]), np.array([-10.0, -8.0, -9.5]),

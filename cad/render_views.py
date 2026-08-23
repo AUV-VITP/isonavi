@@ -1,4 +1,4 @@
-"""Renders and drawings of the VARUNA-1 CAD model.
+"""Renders and drawings of the isonavi-1 CAD model.
 
 Tessellates the CadQuery assembly directly so every part keeps its own colour,
 rather than flattening to a single-colour mesh. Produces the hero view, a four
@@ -24,10 +24,10 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 import cadquery as cq
 
-import varuna_cad as V
-import varuna_layout as L
+import isonavi_cad as V
+import isonavi_layout as L
 
-OUT = os.path.expanduser("~/dev/rakshatech/cad")
+OUT = os.path.expanduser("~/dev/isonavi/cad")
 MM = 1000.0
 
 INK = "#20242c"
@@ -191,7 +191,7 @@ def hero(tris, norms, cols, info):
     fig = plt.figure(figsize=(13.5, 7.6), facecolor="white")
     ax = fig.add_subplot(111, projection="3d", facecolor="white")
     draw(ax, tris, norms, cols, 19, -57, zoom=0.86)
-    ax.text2D(0.015, 0.95, "VARUNA-1", transform=ax.transAxes, fontsize=25,
+    ax.text2D(0.015, 0.95, "isonavi-1", transform=ax.transAxes, fontsize=25,
               fontweight="bold", color=BLUE)
     ax.text2D(0.015, 0.885,
               f"{info['hull_length_mm']:.0f} x {info['hull_diameter_mm']:.0f}"
@@ -199,11 +199,11 @@ def hero(tris, norms, cols, info):
               "every dimension derived from the simulation parameters",
               transform=ax.transAxes, fontsize=11.5, color="#444")
     plt.tight_layout()
-    plt.savefig(f"{OUT}/varuna_hero.png", dpi=155, facecolor="white",
+    plt.savefig(f"{OUT}/isonavi_hero.png", dpi=155, facecolor="white",
                 bbox_inches="tight")
     plt.close()
-    trim_png(f"{OUT}/varuna_hero.png")
-    print("wrote varuna_hero.png")
+    trim_png(f"{OUT}/isonavi_hero.png")
+    print("wrote isonavi_hero.png")
 
     # A caption-free version. On the title page the surrounding document
     # already names the vehicle, so the overlay only competes with it.
@@ -211,11 +211,11 @@ def hero(tris, norms, cols, info):
     ax = fig.add_subplot(111, projection="3d", facecolor="white")
     draw(ax, tris, norms, cols, 19, -57, zoom=0.94)
     plt.tight_layout()
-    plt.savefig(f"{OUT}/varuna_hero_plain.png", dpi=155, facecolor="white",
+    plt.savefig(f"{OUT}/isonavi_hero_plain.png", dpi=155, facecolor="white",
                 bbox_inches="tight")
     plt.close()
-    trim_png(f"{OUT}/varuna_hero_plain.png")
-    print("wrote varuna_hero_plain.png")
+    trim_png(f"{OUT}/isonavi_hero_plain.png")
+    print("wrote isonavi_hero_plain.png")
 
 
 def general_arrangement(tris, norms, cols, info):
@@ -226,7 +226,7 @@ def general_arrangement(tris, norms, cols, info):
         ax = fig.add_subplot(2, 2, k + 1, projection="3d", facecolor="white")
         draw(ax, tris, norms, cols, el, az)
         ax.set_title(name, color=INK, fontsize=12, pad=-2)
-    fig.suptitle("VARUNA-1 general arrangement", fontsize=17, color=BLUE,
+    fig.suptitle("isonavi-1 general arrangement", fontsize=17, color=BLUE,
                  fontweight="bold", y=0.975)
     fig.text(0.5, 0.935,
              f"{info['hull_length_mm']:.0f} mm overall, "
@@ -235,11 +235,11 @@ def general_arrangement(tris, norms, cols, info):
              "8 vectored thrusters",
              ha="center", fontsize=10.5, color="#444")
     plt.tight_layout(rect=(0, 0, 1, 0.93))
-    plt.savefig(f"{OUT}/varuna_ga.png", dpi=145, facecolor="white",
+    plt.savefig(f"{OUT}/isonavi_ga.png", dpi=145, facecolor="white",
                 bbox_inches="tight")
     plt.close()
-    trim_png(f"{OUT}/varuna_ga.png")
-    print("wrote varuna_ga.png")
+    trim_png(f"{OUT}/isonavi_ga.png")
+    print("wrote isonavi_ga.png")
 
 
 LIGHT = np.array([0.36, 0.52, 0.78])
@@ -293,9 +293,9 @@ def title_block(ax, info):
     ax.axis("off")
     ax.add_patch(plt.Rectangle((0.02, 0.05), 0.96, 0.93, fill=False,
                                ec="#c9ccd1", lw=1.0, transform=ax.transAxes))
-    ax.text(0.5, 0.93, "VARUNA-1", transform=ax.transAxes, fontsize=14,
+    ax.text(0.5, 0.93, "isonavi-1", transform=ax.transAxes, fontsize=14,
             fontweight="bold", color=BLUE, ha="center", va="top")
-    ax.text(0.5, 0.875, "RakshaTech Synapse 2026", transform=ax.transAxes,
+    ax.text(0.5, 0.875, "principal dimensions", transform=ax.transAxes,
             fontsize=8, color=GREY, ha="center", va="top")
     ax.annotate("", xy=(0.08, 0.845), xytext=(0.92, 0.845),
                 xycoords=ax.transAxes, textcoords=ax.transAxes,
@@ -358,11 +358,11 @@ def dimensioned(tris, norms, cols, info, geom):
 
     # The title and its subtitle overlapped here, and both repeated the
     # caption. Removing them fixes the collision and frees the space.
-    plt.savefig(f"{OUT}/varuna_dimensioned.png", dpi=155, facecolor="white",
+    plt.savefig(f"{OUT}/isonavi_dimensioned.png", dpi=155, facecolor="white",
                 bbox_inches="tight")
     plt.close()
-    trim_png(f"{OUT}/varuna_dimensioned.png")
-    print("wrote varuna_dimensioned.png")
+    trim_png(f"{OUT}/isonavi_dimensioned.png")
+    print("wrote isonavi_dimensioned.png")
 
 
 CALLOUTS = [
@@ -411,11 +411,11 @@ def cutaway():
     place(right, 0.985, "right")
 
     # Titled by its caption in the document, not here.
-    plt.savefig(f"{OUT}/varuna_cutaway.png", dpi=155, facecolor="white",
+    plt.savefig(f"{OUT}/isonavi_cutaway.png", dpi=155, facecolor="white",
                 bbox_inches="tight")
     plt.close()
-    trim_png(f"{OUT}/varuna_cutaway.png")
-    print("wrote varuna_cutaway.png")
+    trim_png(f"{OUT}/isonavi_cutaway.png")
+    print("wrote isonavi_cutaway.png")
 
 
 def exploded():
@@ -425,15 +425,15 @@ def exploded():
     ax = fig.add_subplot(111, projection="3d", facecolor="white")
     # Titled by its caption in the document, not here.
     draw(ax, tris, norms, cols, 18, -56, zoom=1.0)
-    plt.savefig(f"{OUT}/varuna_exploded.png", dpi=150, facecolor="white",
+    plt.savefig(f"{OUT}/isonavi_exploded.png", dpi=150, facecolor="white",
                 bbox_inches="tight")
     plt.close()
-    trim_png(f"{OUT}/varuna_exploded.png")
-    print("wrote varuna_exploded.png")
+    trim_png(f"{OUT}/isonavi_exploded.png")
+    print("wrote isonavi_exploded.png")
 
 
 if __name__ == "__main__":
-    info = json.load(open(f"{OUT}/varuna_cad_params.json"))
+    info = json.load(open(f"{OUT}/isonavi_cad_params.json"))
     assy, _, geom, _, _ = V.build()
     tris, norms, cols = tessellate(assy, skip=INTERNAL)
     print(f"tessellated {len(tris)} triangles from {len(assy.children)} parts")

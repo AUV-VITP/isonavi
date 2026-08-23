@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Circle, Rectangle
 
-from varuna.scene import DisasterSite
-from varuna.mapping import (BathymetryMap, detect_objects_from_residual,
+from isonavi.scene import DisasterSite
+from isonavi.mapping import (BathymetryMap, detect_objects_from_residual,
                             match_detections)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,7 +19,7 @@ plt.rcParams.update({"figure.dpi": 130, "savefig.dpi": 145, "font.size": 9,
                      "axes.spines.top": False, "axes.spines.right": False,
                      "legend.frameon": False})
 
-d = np.load(f"{LOG}/mission_varuna_s1.npz", allow_pickle=True)
+d = np.load(f"{LOG}/mission_isonavi_s1.npz", allow_pickle=True)
 site = DisasterSite()
 bm = BathymetryMap(site.cfg.x_min, site.cfg.x_max, site.cfg.y_min, site.cfg.y_max, 0.5)
 bm.sum, bm.count = d["map_sum"], d["map_count"]

@@ -1,4 +1,4 @@
-"""VARUNA: autonomous underwater reconnaissance and assessment for disaster response.
+"""isonavi: autonomous underwater reconnaissance and assessment for disaster response.
 
 Core simulation and autonomy library. The modules are deliberately free of any
 ROS dependency so they can be unit tested and benchmarked directly; the ROS 2

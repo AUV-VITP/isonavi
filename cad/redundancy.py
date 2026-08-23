@@ -1,4 +1,4 @@
-"""Thruster-out analysis for VARUNA-1.
+"""Thruster-out analysis for isonavi-1.
 
 A vehicle sent into a debris field will eventually lose a thruster: fouled by
 line, struck by rubble, or flooded. Eight thrusters driving six degrees of
@@ -26,19 +26,19 @@ from scipy.optimize import linprog
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "simulation"))
 
-from varuna.dynamics import VARUNA_1, vectored_allocation
+from isonavi.dynamics import isonavi_1, vectored_allocation
 
 SITE_CURRENT = 2.4
 
 # Surge damping. The quadratic term is the CAD derived drag, read from the file
 # that computes it rather than copied, so the two cannot drift apart.
-LIN = VARUNA_1.lin_damp[0]
+LIN = isonavi_1.lin_damp[0]
 _hydro = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                      "varuna_hydro.json")
+                      "isonavi_hydro.json")
 if os.path.exists(_hydro):
     QUAD = json.load(open(_hydro))["drag_total"]
 else:                                   # fall back to the modelled value
-    QUAD = VARUNA_1.quad_damp[0]
+    QUAD = isonavi_1.quad_damp[0]
 
 
 def max_along(B, axis, limit, hold_moments=True):
@@ -86,11 +86,11 @@ def hydro_load(V, psi):
     """
     u = V * np.cos(psi)
     v = -V * np.sin(psi)
-    Xu, Yv = VARUNA_1.lin_damp[0], VARUNA_1.lin_damp[1]
-    Xuu, Yvv = QUAD, VARUNA_1.quad_damp[1]
+    Xu, Yv = isonavi_1.lin_damp[0], isonavi_1.lin_damp[1]
+    Xuu, Yvv = QUAD, isonavi_1.quad_damp[1]
     fx = Xu * u + Xuu * abs(u) * u
     fy = Yv * v + Yvv * abs(v) * v
-    mz = VARUNA_1.fin_coeff * u * v          # fins weathercock the hull
+    mz = isonavi_1.fin_coeff * u * v          # fins weathercock the hull
     return fx, fy, mz
 
 
@@ -136,7 +136,7 @@ def heading_study(B, lim, need):
     print()
     print("  the remaining freedom is heading, carrying the drag of incidence")
     print(f"  ({'broadside quadratic damping'} "
-          f"{VARUNA_1.quad_damp[1]:.0f} against {QUAD:.1f} in surge)")
+          f"{isonavi_1.quad_damp[1]:.0f} against {QUAD:.1f} in surge)")
     print()
     print(f"  {'failed unit':16s}{'nose on m/s':>13}{'best m/s':>11}"
           f"{'at heading':>12}{'holds site':>12}")
@@ -172,14 +172,14 @@ def thrust_for_tolerance(B, need, lo=80.0, hi=400.0):
 
 
 def main():
-    B = vectored_allocation(VARUNA_1.arms)
-    lim = VARUNA_1.max_thrust_n
+    B = vectored_allocation(isonavi_1.arms)
+    lim = isonavi_1.max_thrust_n
 
     need = drag_at(SITE_CURRENT)
     surge0 = max_along(B, 0, lim)
     heave0 = max_along(B, 2, lim)
 
-    print("VARUNA-1 thruster-out analysis")
+    print("isonavi-1 thruster-out analysis")
     print("=" * 74)
     print(f"  eight thrusters at {lim:.0f} N, six degrees of freedom")
     print(f"  station keeping at {SITE_CURRENT:.1f} m/s needs "
@@ -278,7 +278,7 @@ def main():
     print("  it is stated as a limitation rather than quietly designed around.")
 
     p = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                     "varuna_redundancy.json")
+                     "isonavi_redundancy.json")
     json.dump(out, open(p, "w"), indent=1)
     print(f"\n  wrote {os.path.basename(p)}")
     return out

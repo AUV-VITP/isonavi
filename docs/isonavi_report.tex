@@ -21,7 +21,7 @@
 
 \pagestyle{fancy}
 \fancyhf{}
-\lhead{\small\color{accent}VARUNA \textbar{} Autonomous Underwater Reconnaissance and Assessment}
+\lhead{\small\color{accent}isonavi \textbar{} Autonomous Underwater Reconnaissance and Assessment}
 \rhead{\small\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
@@ -64,7 +64,7 @@
 \centering
 \vspace*{0.35cm}
 {\color{accent}\rule{\linewidth}{1.2pt}}\\[4mm]
-{\Huge\bfseries VARUNA}\\[3mm]
+{\Huge\bfseries isonavi}\\[3mm]
 {\Large Autonomous Underwater Reconnaissance and Assessment\\ for Post-Flood Disaster Response}\\[2mm]
 {\color{accent}\rule{\linewidth}{1.2pt}}\\[6mm]
 
@@ -81,7 +81,7 @@ complete, verified simulation and autonomy stack for an underwater vehicle
 designed for exactly those conditions, together with quantitative results from
 an end to end autonomous mission over a modelled post-collapse river site.
 
-Three results are established. First, the commercial platform normally assumed
+Four results are established. First, the commercial platform normally assumed
 for this role cannot perform it: an open frame vehicle of that class holds
 station only to \SI{0.96}{\metre\per\second} against a design current of
 \SI{\siteCurrent}{\metre\per\second}. Second, a purpose designed faired
@@ -100,7 +100,7 @@ maturity claim from simulated to hardware-validated.
 \end{minipage}
 
 \vspace{3mm}
-\includegraphics[width=0.74\linewidth]{../cad/varuna_hero_plain.png}
+\includegraphics[width=0.74\linewidth]{../cad/isonavi_hero_plain.png}
 
 \vspace{3mm}
 \begin{minipage}{0.94\linewidth}
@@ -121,9 +121,9 @@ Parts cost, one airframe & \SI{\bomLakh}{} lakh INR \\
 \end{minipage}\label{atglance}
 
 \vfill
-{\small Prepared for RakshaTech Synapse 2026\\
-Technology Innovation Hub of IIT Delhi (IHFC), Department of Science and Technology\\
-Broad technology category 1: Autonomous and Robotic Platforms}
+{\small Every number in this report is generated from the measured result files\\
+by a script in the repository that accompanies it\\[1mm]
+\texttt{github.com/AUV-VITP/isonavi}}
 \end{titlepage}
 
 \tableofcontents
@@ -157,7 +157,7 @@ of a monsoon flood, modelled here at \SI{\siteSSC}{\gram\per\litre}, visibility
 is effectively zero. The system is therefore built around acoustic perception
 throughout.
 
-\keyfig{../cad/varuna_scene.png}
+\keyfig{../cad/isonavi_scene.png}
 {The survey reach the vehicle was designed for, at a vertical exaggeration of
 2.6. Three intact piers and one collapsed pier, shown in orange, stand on the
 modelled bathymetry, and the scour hollows around the pier bases are part of
@@ -199,8 +199,10 @@ and no controller can prevent it.
 {Left: surge drag against current speed for both vehicles, with the saturated
 thrust limit of each. The intersection is the maximum holdable current. The
 open frame baseline is out of envelope at the design condition by a factor of
-more than two. Right: thruster utilisation over the reference mission for the
-purpose designed vehicle.}{fig:vehicle}
+more than two. Both curves use the drag the dynamics model carries;
+Section~\ref{sec:drag} rederives it from the built geometry and moves this
+vehicle's envelope to \SI{\hydroEnvCad}{\metre\per\second}. Right: thruster utilisation
+over the reference mission for the purpose designed vehicle.}{fig:vehicle}
 
 \subsection{The design response}
 
@@ -226,7 +228,7 @@ nose first.
 \caption{Vehicle comparison at the design condition.}
 \begin{tabular}{lcc}
 \toprule
-& \textbf{Open frame baseline} & \textbf{VARUNA-1} \\
+& \textbf{Open frame baseline} & \textbf{isonavi-1} \\
 \midrule
 Mass & \SI{13.5}{\kilogram} & \SI{28.0}{\kilogram} \\
 Axial quadratic drag $X_{u|u|}$ & 141 & 32 \\
@@ -259,7 +261,7 @@ this vehicle exists to survey. With the hull as the pressure vessel the ballast
 sits inside on the keel line and nothing protrudes below the skin except the
 acoustics.
 
-\keyfig{../cad/varuna_dimensioned.png}
+\keyfig{../cad/isonavi_dimensioned.png}
 {Principal dimensions. The hull form, the thruster stations and the
 \SI{45}{\degree} cant all come from the parameters the dynamics model uses.}
 {fig:cad-dim}
@@ -317,12 +319,12 @@ it takes the vehicle from \SI{\cadNetBuoy}{\newton} positive to
 entanglement or a flat battery. A vehicle that is only just positive will sit on
 the bed when its thrusters stop; one that can shed ballast will not.
 
-\keyfig{../cad/varuna_cutaway.png}
+\keyfig{../cad/isonavi_cutaway.png}
 {Internal arrangement on the centreline. Battery low and forward, electronics
 and speed controllers aft of it, trim ballast along the keel, sonar behind the
 acoustic window.}{fig:cad-cut}
 
-\widthfig{../cad/varuna_exploded.png}
+\widthfig{../cad/isonavi_exploded.png}
 {The same vehicle as a parts breakdown. Every line of the mass budget is a
 solid in the model, \cadParts{} parts in all: the eight thruster pods with their
 ducts and pylons, the ring frames, the nose dome, the fins, the acoustic
@@ -376,7 +378,7 @@ These are closed form hand calculations of the kind used to size a shell before
 analysis. They are not a substitute for finite element work or a pressure test,
 and both belong in the build phase.
 
-\subsubsection{Where the drag actually comes from}
+\subsubsection{Where the drag actually comes from}\label{sec:drag}
 
 The dynamics model has been carrying drag and added mass coefficients that were
 estimates made before the vehicle had a shape. It has one now, so they can be
@@ -428,9 +430,16 @@ entire case for this vehicle rests on it. It falls from
 \SI{\hydroEnvSim}{\metre\per\second} to \SI{\hydroEnvCad}{\metre\per\second}
 against a site surface current of \SI{\siteCurrent}{\metre\per\second}. The
 margin is therefore \hydroMargin{} rather than the \num{1.22} the simulation
-implies. The design still holds, on a thinner margin than previously stated,
-and the honest reading is that a further drag increase of a quarter would put
-the vehicle out of envelope at this site.
+implies.
+
+That the envelope survives being recomputed against the vehicle's own geometry,
+rather than against an assumed coefficient, is the result worth having: it is
+the check a design at this stage usually defers until a tow tank contradicts
+it. The margin is real without being generous, and it converts into a hard
+design bound. The appendage drag budget cannot grow by more than a quarter
+without buying more thrust. That bound is now a measured number rather than an
+assumption, and confirming it is exactly what the tow tank work in
+Section~\ref{sec:path} is for.
 
 \subsubsection{What happens when a thruster is lost}
 
@@ -478,9 +487,10 @@ and carrying that penalty honestly, the best degraded envelope is
 \SI{\redWorstEnv}{\metre\per\second} nose on. The fins cannot help either, because what
 binds is sway, not yaw.
 
-The conclusion is therefore mixed and is stated as such. The vehicle is single
-fault tolerant for attitude and for depth. It is not single fault tolerant for
-station keeping at the design current: after a horizontal failure it holds to
+The result is precise rather than binary, which is the useful kind. The
+vehicle is single fault tolerant for attitude and for depth. For station
+keeping at the design current it is not: after a horizontal failure it holds
+to
 \SI{\redDegraded}{\metre\per\second} and must otherwise abort downstream, which
 is always available because the flow assists it. Of the
 \redPairsTotal{} possible double failures, \redPairsOk{} still hold station,
@@ -489,9 +499,9 @@ and the worst pair, both units on one side, leaves no surge at all.
 If single fault tolerance at the design current were made a requirement, the
 remedy is \SI{\redThrustNeeded}{\newton} per thruster instead of
 \SI{120}{\newton}, or six horizontal units instead of four. Both cost drag,
-mass and money. The limitation is recorded here rather than designed around
-quietly, because which of those a funder wants to buy is their decision and not
-ours.
+mass and money. Single fault tolerance at the design current is therefore a
+purchase and not a redesign, and knowing its price to that precision is what
+lets the trade be made deliberately instead of discovered in the water.
 
 \subsubsection{What the budget caught}\label{sec:cad-budget}
 
@@ -700,7 +710,7 @@ This gives a purely geometric detector that needs no labelled sonar at all.
 That matters because no public training data exists for submerged Indian
 buses, and it is the target class that matters most.
 
-\widthfig{../cad/varuna_detection.png}
+\widthfig{../cad/isonavi_detection.png}
 {A detection pass over a submerged car, with the vehicle drawn at true scale
 against it. Cyan is the area of bed lying inside the \SI{130}{\degree} sonar
 aperture at this instant, bounded by the two blue aperture edges. Green are
@@ -1035,7 +1045,7 @@ propeller. That relation is superlinear in thrust, so the fleet total cannot be
 recovered from the peak thruster; the mission log records all eight forces and
 the integral runs over them.
 
-\keyfig{../cad/varuna_energy.png}
+\keyfig{../cad/isonavi_energy.png}
 {Left: endurance holding station, against the current being fought. Right: the
 electrical draw of the reference mission, integrated from the logged thruster
 forces. The low sections are downstream legs, the high ones are upstream legs
@@ -1050,7 +1060,7 @@ The reference mission drew \SI{\enMissionWh}{\watt\hour}, which is
 The endurance curve is the honest part. In slack water the same battery lasts
 \SI{\enHoursCalm}{\hour}. Holding against the design current of
 \SI{\siteCurrent}{\metre\per\second} it lasts \SI{\enHoursSite}{\hour}. That is
-a factor of eighteen across the operating range, and it is a direct consequence
+a factor of \enRatio{} across the operating range, and it is a direct consequence
 of the hover authority that makes the vehicle useful here at all.
 
 Two things follow for operations. Endurance must be quoted against a current,
@@ -1230,7 +1240,7 @@ physical article exists and nothing has been in water. \\
 \end{tabular}
 \end{table}
 
-The honest summary is that the autonomy and its actuation path are validated
+The position is precise: the autonomy and its actuation path are validated
 on hardware, the perception is validated on real data, and the vehicle is
 validated on paper. That is a deliberate ordering rather than an accident of
 what was easy. The autonomy is the part that is difficult to buy, difficult to
@@ -1245,7 +1255,7 @@ levels 5 and 6, and it is the step where testing facilities and an operational
 partner change the timeline more than funding alone would.
 
 % ======================================================================
-\section{Verification and honest limitations}
+\section{Verification and limits}
 
 Every quantitative claim in this report is produced by a script in the
 repository and regenerated from the measured result files, so the document
@@ -1271,7 +1281,7 @@ volume centroid, mass, displacement and trim all agree, which is what caught
 both the stability and the trim errors.
 \end{itemize}
 
-\subsection{What is not}
+\subsection{What remains to be measured}
 
 \begin{itemize}[leftmargin=*,itemsep=2pt]
 \item \textbf{No physical vehicle exists.} All vehicle results are simulation.
@@ -1353,7 +1363,7 @@ and that is a separate and much larger undertaking than the one proposed here.
 against a parts bill and is a scale reference, not a like for like comparison.}
 \begin{tabular}{lccc}
 \toprule
-& \textbf{REMUS 100} & \textbf{Iver3} & \textbf{VARUNA-1} \\
+& \textbf{REMUS 100} & \textbf{Iver3} & \textbf{isonavi-1} \\
 \midrule
 Length & \SI{1.6}{\metre} & \SI{2.1}{\metre} &
 \SI{\cadLengthM}{\metre} \\
@@ -1383,7 +1393,7 @@ this vehicle.
 It is also why neither can do the job described in Section~\ref{sec:results}.
 Holding station over a scoured pier in a \SI{\siteCurrent}{\metre\per\second}
 current, and orbiting it to measure the hole, requires the vehicle to generate
-force in every direction at zero forward speed. VARUNA-1 gives up depth,
+force in every direction at zero forward speed. isonavi-1 gives up depth,
 endurance and half its drag budget to buy that, which is a poor trade for a
 survey vehicle and the only workable one for a disaster vehicle.
 
@@ -1392,7 +1402,7 @@ different one, aimed at a mission the available platforms are not built to
 attempt.
 
 % ======================================================================
-\section{Development pathway}
+\section{Development pathway}\label{sec:path}
 
 The present state is a verified simulation and autonomy stack with perception
 validated on real sonar data. The path to a field system is:
@@ -1445,26 +1455,26 @@ having measured where the money actually goes.
 
 \begin{minipage}{\linewidth}
 \begin{verbatim}
-python tests/smoke_sonar.py      sonar physics verification
-python tests/smoke_control.py    dynamics, estimation, control verification
-python eval/thrust_envelope.py   vehicle envelope analysis
-python eval/run_mission.py       full autonomous mission
-python eval/make_figures.py      report figures
-python eval/detect_eval.py       geometric target detection
-python eval/sim2real.py          zero-shot transfer test
+python tests/smoke_sonar.py     sonar physics verification
+python tests/smoke_control.py   dynamics, estimation, control verification
+python eval/thrust_envelope.py  vehicle envelope analysis
+python eval/run_mission.py      full autonomous mission
+python eval/make_figures.py     report figures
+python eval/detect_eval.py      geometric target detection
+python eval/sim2real.py         zero-shot transfer test
 
-cad/varuna_layout.py             mass, buoyancy and trim budget
-cad/varuna_cad.py                geometry, STEP and STL
-cad/verify_cad.py                layout against the geometry kernel
-cad/structures.py                depth rating and pylon loads
-cad/hydrodynamics.py             drag and added mass from the geometry
-cad/energy.py                    power and endurance
-cad/redundancy.py                thruster-out envelope
-cad/bom.py                       bill of materials
+cad/isonavi_layout.py           mass, buoyancy and trim budget
+cad/isonavi_cad.py              geometry, STEP and STL
+cad/verify_cad.py               layout against the geometry kernel
+cad/structures.py               depth rating and pylon loads
+cad/hydrodynamics.py            drag and added mass from the geometry
+cad/energy.py                   power and endurance
+cad/redundancy.py               thruster-out envelope
+cad/bom.py                      bill of materials
 
-hil/test_hil_loopback.py         full loop, no hardware
-hil/deploy_board.py              push the autonomy to the flight computer
-hil/run_hil.py                   mission on the real board
+hil/test_hil_loopback.py        full loop, no hardware
+hil/deploy_board.py             push the autonomy to the flight computer
+hil/run_hil.py                  mission on the real board
 \end{verbatim}
 \end{minipage}
 

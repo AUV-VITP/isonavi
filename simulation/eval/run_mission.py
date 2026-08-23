@@ -6,22 +6,22 @@ import time
 
 import numpy as np
 
-from varuna.scene import DisasterSite
-from varuna.mission import MissionRunner, MissionConfig
-from varuna.dynamics import BLUEROV2_HEAVY, VARUNA_1, max_holdable_current
-from varuna.control import VARUNA_GAINS, ControlGains
+from isonavi.scene import DisasterSite
+from isonavi.mission import MissionRunner, MissionConfig
+from isonavi.dynamics import BLUEROV2_HEAVY, isonavi_1, max_holdable_current
+from isonavi.control import isonavi_GAINS, ControlGains
 
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results")
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--seed", type=int, default=1)
-ap.add_argument("--vehicle", default="varuna", choices=["varuna", "bluerov2"])
+ap.add_argument("--vehicle", default="isonavi", choices=["isonavi", "bluerov2"])
 ap.add_argument("--tag", default=None)
 ap.add_argument("--quiet", action="store_true")
 args = ap.parse_args()
 
-params = VARUNA_1 if args.vehicle == "varuna" else BLUEROV2_HEAVY
-gains = VARUNA_GAINS if args.vehicle == "varuna" else ControlGains()
+params = isonavi_1 if args.vehicle == "isonavi" else BLUEROV2_HEAVY
+gains = isonavi_GAINS if args.vehicle == "isonavi" else ControlGains()
 tag = args.tag or f"{args.vehicle}_s{args.seed}"
 
 site = DisasterSite()

@@ -1,4 +1,4 @@
-"""Component layout, mass budget and stability budget for VARUNA-1.
+"""Component layout, mass budget and stability budget for isonavi-1.
 
 This is the engineering content behind the CAD. Every part the vehicle carries
 is listed with a real mass and a real position, and the free variables are
@@ -41,7 +41,7 @@ import math
 from dataclasses import dataclass
 
 # ------------------------------------------------------------------ targets
-# From simulation/varuna/dynamics.py::VARUNA_1. The layout has to satisfy these.
+# From simulation/isonavi/dynamics.py::isonavi_1. The layout has to satisfy these.
 TARGET_MASS = 28.0        # kg
 TARGET_VOLUME = 0.0282    # m3 displaced
 RHO_WATER = 1000.0        # freshwater, this is a flood scenario
@@ -167,7 +167,7 @@ class Part:
     group: str
 
 
-# Thruster stations, from the allocation arms in VARUNA_1.
+# Thruster stations, from the allocation arms in isonavi_1.
 ARM_LX, ARM_LY, ARM_VX, ARM_VY = 0.42, 0.30, 0.38, 0.26
 THR_POD_V = 0.00040       # sealed volume of one thruster pod, m3
 BALLAST_Z = -0.062        # on the keel line inside the hull, clear of the skin
@@ -295,7 +295,7 @@ if __name__ == "__main__":
     parts, geom, v_hull = solve_layout()
     b = budget(parts)
 
-    print("VARUNA-1 mass and stability budget")
+    print("isonavi-1 mass and stability budget")
     print("=" * 64)
     print(f"{'item':36s}{'mass kg':>10s}{'x mm':>9s}{'z mm':>9s}")
     print("-" * 64)

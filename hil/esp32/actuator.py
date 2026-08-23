@@ -1,4 +1,4 @@
-"""VARUNA actuator interface, running on the ESP32.
+"""isonavi actuator interface, running on the ESP32.
 
 Speaks the same framed, CRC checked protocol as the rest of the bench, so the
 pulse widths this generates are the ones the flight computer's allocation

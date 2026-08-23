@@ -1,9 +1,9 @@
-"""Parametric CAD model of VARUNA-1, built with CadQuery.
+"""Parametric CAD model of isonavi-1, built with CadQuery.
 
 The geometry is driven by two things and invents nothing else:
 
-  simulation/varuna/dynamics.py::VARUNA_1   mass, displacement, thruster arms
-  cad/varuna_layout.py                      the solved component layout
+  simulation/isonavi/dynamics.py::isonavi_1   mass, displacement, thruster arms
+  cad/isonavi_layout.py                      the solved component layout
 
 The hull size comes from the layout solve, so the modelled hull encloses
 exactly the volume the simulation uses for buoyancy, and every component sits
@@ -22,7 +22,7 @@ import os
 
 import cadquery as cq
 
-import varuna_layout as L
+import isonavi_layout as L
 
 MM = 1000.0
 DEG = 180.0 / math.pi
@@ -495,7 +495,7 @@ def build(cutaway=False, explode=0.0):
 
 
 if __name__ == "__main__":
-    out = os.path.expanduser("~/dev/rakshatech/cad")
+    out = os.path.expanduser("~/dev/isonavi/cad")
     os.makedirs(out, exist_ok=True)
 
     assy, hull, geom, v_hull, parts = build()
@@ -504,16 +504,16 @@ if __name__ == "__main__":
     built = hull.val().Volume() / MM ** 3
     err = 100 * (built - v_hull) / v_hull
 
-    cq.exporters.export(assy.toCompound(), f"{out}/varuna_vehicle.step")
-    cq.exporters.export(assy.toCompound(), f"{out}/varuna_vehicle.stl",
+    cq.exporters.export(assy.toCompound(), f"{out}/isonavi_vehicle.step")
+    cq.exporters.export(assy.toCompound(), f"{out}/isonavi_vehicle.stl",
                         tolerance=0.25, angularTolerance=0.12)
 
     cut, _, _, _, _ = build(cutaway=True)
-    cq.exporters.export(cut.toCompound(), f"{out}/varuna_cutaway.stl",
+    cq.exporters.export(cut.toCompound(), f"{out}/isonavi_cutaway.stl",
                         tolerance=0.25, angularTolerance=0.12)
 
     exp, _, _, _, _ = build(explode=260.0)
-    cq.exporters.export(exp.toCompound(), f"{out}/varuna_exploded.stl",
+    cq.exporters.export(exp.toCompound(), f"{out}/isonavi_exploded.stl",
                         tolerance=0.3, angularTolerance=0.15)
 
     info = {
@@ -538,9 +538,9 @@ if __name__ == "__main__":
         "n_thrusters": 8,
         "n_parts": len(assy.children),
     }
-    with open(f"{out}/varuna_cad_params.json", "w") as f:
+    with open(f"{out}/isonavi_cad_params.json", "w") as f:
         json.dump(info, f, indent=1)
 
-    print("built VARUNA-1")
+    print("built isonavi-1")
     for k, v in info.items():
         print(f"  {k}: {v}")

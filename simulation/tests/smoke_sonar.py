@@ -9,8 +9,8 @@ Checks, in order:
 import time
 import numpy as np
 
-from varuna.geometry import Scene, Plane, Box, Cylinder, Sphere, Heightfield
-from varuna.acoustics import ForwardLookingSonar, preset, MAT_INDEX
+from isonavi.geometry import Scene, Plane, Box, Cylinder, Sphere, Heightfield
+from isonavi.acoustics import ForwardLookingSonar, preset, MAT_INDEX
 
 ok = lambda c, m: print(("  PASS  " if c else "  FAIL  ") + m)
 

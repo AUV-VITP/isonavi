@@ -18,7 +18,7 @@
   "REPORT",
   "DONE"
  ],
- "vehicle": "VARUNA-1 (faired, high-thrust)",
+ "vehicle": "isonavi-1 (faired, high-thrust)",
  "seed": 3,
  "wall_clock_s": 271.8319465490001,
  "max_holdable_current": 2.931118818792321,

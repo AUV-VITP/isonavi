@@ -8,8 +8,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from varuna.scene import DisasterSite, SiteConfig
-from varuna.acoustics import ForwardLookingSonar, preset
+from isonavi.scene import DisasterSite, SiteConfig
+from isonavi.acoustics import ForwardLookingSonar, preset
 
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results", "figures")
 os.makedirs(OUT, exist_ok=True)

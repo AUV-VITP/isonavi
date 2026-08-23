@@ -4,7 +4,7 @@ Balances steady surge drag against the maximum surge force the thruster
 layout can deliver under per-thruster saturation.
 """
 import numpy as np
-from varuna.dynamics import VehicleParams, bluerov_heavy_allocation
+from isonavi.dynamics import VehicleParams, bluerov_heavy_allocation
 
 B = bluerov_heavy_allocation()
 Bp = np.linalg.pinv(B)

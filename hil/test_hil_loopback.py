@@ -68,8 +68,8 @@ print("=" * 66)
 
 # Load the pure-sim reference (seed 1 is the committed reference; seed 0 here).
 # Re-run pure sim at seed 0 for an apples-to-apples comparison.
-from varuna.scene import DisasterSite
-from varuna.mission import MissionRunner, MissionConfig
+from isonavi.scene import DisasterSite
+from isonavi.mission import MissionRunner, MissionConfig
 ref = MissionRunner(DisasterSite(), MissionConfig(), seed=0).run(verbose=False)
 
 print(f"  {'metric':<26}{'pure sim':>12}{'HIL':>12}{'delta':>10}")

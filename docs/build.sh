@@ -12,7 +12,7 @@ repo="$(dirname "$here")"
 echo "regenerating metrics from the measured result files"
 ( cd "$repo/simulation" && PYTHONPATH=. python3 eval/make_metrics_tex.py )
 
-for doc in varuna_report varuna_brief; do
+for doc in isonavi_report isonavi_brief; do
   echo "building $doc"
   ( cd "$repo/docs" \
     && pdflatex -interaction=nonstopmode "$doc.tex" > "/tmp/$doc.1.log" 2>&1 \

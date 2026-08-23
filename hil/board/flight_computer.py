@@ -6,7 +6,7 @@ asks the host for a sensor sample, runs the EKF and controller, allocates
 thrust, sends pulse widths to the ESP32, and reports the applied wrench back to
 the host so the host can integrate the plant.
 
-It imports the same varuna estimation, control and dynamics code that the
+It imports the same isonavi estimation, control and dynamics code that the
 pure-simulation stack uses. Nothing is reimplemented for the board, so a
 matching mission result is evidence about the same software, not a lookalike.
 
@@ -28,11 +28,11 @@ sys.path.insert(0, "/root/hil")
 sys.path.insert(0, "/root/hil/common")
 
 import hil_protocol as P
-from varuna.estimation import NavigationEKF
-from varuna.control import PoseController, VARUNA_GAINS, CurrentEstimator
-from varuna.dynamics import VARUNA_1, vectored_allocation
-from varuna.mission import MissionConfig, lawnmower, orbit, PHASES
-from varuna.dynamics import rot_body_to_world
+from isonavi.estimation import NavigationEKF
+from isonavi.control import PoseController, isonavi_GAINS, CurrentEstimator
+from isonavi.dynamics import isonavi_1, vectored_allocation
+from isonavi.mission import MissionConfig, lawnmower, orbit, PHASES
+from isonavi.dynamics import rot_body_to_world
 
 
 def thrust_to_pwm(force_n, max_n=120.0):
@@ -208,7 +208,7 @@ class FlightComputer:
         # the authority on site geometry, so these are supplied rather than
         # hardcoded on the board. Defaults match the reference site.
         self.pier_y = pier_y or {"P1": -24.0, "P2": -8.0, "P3": 8.0, "P4": 24.0}
-        self.params = VARUNA_1
+        self.params = isonavi_1
         self.B = vectored_allocation(self.params.arms)
         self.Bp = np.linalg.pinv(self.B)
 
@@ -216,7 +216,7 @@ class FlightComputer:
         yaw0 = CurrentEstimator.heading_into_flow(np.array([1.0, 0, 0])) or np.pi
         self.ekf = NavigationEKF(p0=launch)
         self.ekf.x[6:9] = np.array([0.0, 0.0, yaw0])
-        self.ctl = PoseController(VARUNA_GAINS, params=self.params)
+        self.ctl = PoseController(isonavi_GAINS, params=self.params)
         self.cest = CurrentEstimator(self.params.quad_damp, self.params.lin_damp)
 
         self.phase = "DEPLOY"

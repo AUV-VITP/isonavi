@@ -29,10 +29,10 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from .dynamics import VehicleDynamics, VARUNA_1, rot_body_to_world
+from .dynamics import VehicleDynamics, isonavi_1, rot_body_to_world
 from .sensors import SensorSuite
 from .estimation import NavigationEKF
-from .control import PoseController, VARUNA_GAINS, CurrentEstimator
+from .control import PoseController, isonavi_GAINS, CurrentEstimator
 from .acoustics import ForwardLookingSonar, preset
 from .mapping import BathymetryMap, TargetTracker, estimate_scour
 
@@ -81,7 +81,7 @@ class MissionRunner:
     """Runs the full closed loop and records everything needed for evaluation."""
 
     def __init__(self, site, cfg: MissionConfig | None = None,
-                 params=VARUNA_1, gains=VARUNA_GAINS, sonar=None,
+                 params=isonavi_1, gains=isonavi_GAINS, sonar=None,
                  detector=None, seed=0):
         self.site = site
         self.cfg = cfg or MissionConfig()

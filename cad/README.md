@@ -1,11 +1,11 @@
 # CAD
 
-A parametric model of VARUNA-1 whose job is to check the simulation, not to
+A parametric model of isonavi-1 whose job is to check the simulation, not to
 illustrate it.
 
 ## What is solved rather than assumed
 
-`varuna_layout.py` lists every component the vehicle carries with a real mass
+`isonavi_layout.py` lists every component the vehicle carries with a real mass
 and a real station, then solves three things:
 
 1. the hull size, so displaced volume equals the value the simulation uses for
@@ -134,8 +134,8 @@ It is recorded as a limitation rather than designed around quietly.
 
 | file | what it is |
 | --- | --- |
-| `varuna_layout.py` | component masses, stations, and the budget solve |
-| `varuna_cad.py` | the geometry, driven by the layout |
+| `isonavi_layout.py` | component masses, stations, and the budget solve |
+| `isonavi_cad.py` | the geometry, driven by the layout |
 | `render_views.py` | renders and the dimensioned drawing |
 | `verify_cad.py` | cross checks the layout against the geometry kernel |
 | `structures.py` | pressure hull and pylon sizing |
@@ -144,16 +144,16 @@ It is recorded as a limitation rather than designed around quietly.
 | `bom.py` | bill of materials |
 | `redundancy.py` | thruster-out envelope, by linear program |
 | `scene_render.py` | the vehicle placed in the modelled site |
-| `varuna_vehicle.step` | parametric assembly for CAD |
-| `varuna_cad_params.json` | derived dimensions and the verification numbers |
+| `isonavi_vehicle.step` | parametric assembly for CAD |
+| `isonavi_cad_params.json` | derived dimensions and the verification numbers |
 
 Meshes are gitignored because they regenerate in a few seconds.
 
 ## Reproducing
 
 ```bash
-python varuna_layout.py    # the mass and stability budget
-python varuna_cad.py       # STEP and STL, plus the volume check
+python isonavi_layout.py    # the mass and stability budget
+python isonavi_cad.py       # STEP and STL, plus the volume check
 python render_views.py     # hero, GA, dimensioned drawing, cutaway, exploded
 python verify_cad.py       # cross check the two against each other
 python structures.py       # depth rating and pylon loads
@@ -164,6 +164,6 @@ python redundancy.py       # what a lost thruster costs
 python scene_render.py     # the vehicle in its site
 ```
 
-`varuna_cad.py` reports the volume of the hull it actually built against the
+`isonavi_cad.py` reports the volume of the hull it actually built against the
 volume it was asked for. That check currently closes to 0.003 percent, and it
 is the reason the drawing and the physics cannot quietly drift apart.

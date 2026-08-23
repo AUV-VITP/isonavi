@@ -16,8 +16,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from varuna.scene import DisasterSite
-from varuna.mapping import (BathymetryMap, detect_objects_from_residual,
+from isonavi.scene import DisasterSite
+from isonavi.mapping import (BathymetryMap, detect_objects_from_residual,
                             match_detections)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -32,7 +32,7 @@ PRIMARY = {k: v for k, v in site.targets.items()
            if v["class"] in ("vehicle_large", "vehicle_small", "structure")}
 
 runs = []
-for f in sorted(glob.glob(f"{LOG}/mission_varuna_s*.json")):
+for f in sorted(glob.glob(f"{LOG}/mission_isonavi_s*.json")):
     s = json.load(open(f))
     seed = s.get("seed")
     npz = f.replace(".json", ".npz")

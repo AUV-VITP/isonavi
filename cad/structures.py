@@ -1,4 +1,4 @@
-"""Pressure hull structural check for VARUNA-1.
+"""Pressure hull structural check for isonavi-1.
 
 Making the faired hull the pressure boundary is only defensible if the hull
 survives the depth, so this sizes it. The governing failure mode for a thin
@@ -20,7 +20,7 @@ import json
 import math
 import os
 
-import varuna_layout as L
+import isonavi_layout as L
 
 # ------------------------------------------------------------------ inputs
 # Design depth. The modelled site is about 14 m deep. The rating is set well
@@ -36,7 +36,7 @@ E = 25.0e9                 # Pa, hoop direction modulus
 NU = 0.30
 SIGMA_C = 250.0e6          # Pa, compressive strength
 
-FRAME_SPACING = 0.200      # m, ring frames as modelled in varuna_cad.py
+FRAME_SPACING = 0.200      # m, ring frames as modelled in isonavi_cad.py
 
 
 def design_pressure(depth):
@@ -114,7 +114,7 @@ def main():
     sf_yield = SIGMA_C / sigma
     sf_buckle = p_st / p_d
 
-    print("VARUNA-1 pressure hull check")
+    print("isonavi-1 pressure hull check")
     print("=" * 70)
     print(f"  skin                  {t * 1000:.1f} mm laminate,"
           f" mean radius {r_mean * 1000:.1f} mm")
@@ -173,7 +173,7 @@ def main():
         "frame_gain": d_st / d_un,
     }
     p = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                     "varuna_structures.json")
+                     "isonavi_structures.json")
     json.dump(out, open(p, "w"), indent=1)
     print(f"\n  wrote {os.path.basename(p)}")
 

@@ -24,7 +24,7 @@ def load(name, default=None):
         return json.load(fh)
 
 
-mission = load("mission_varuna_s1.json", {})
+mission = load("mission_isonavi_s1.json", {})
 mapping = load("mapping_metrics.json", {})
 detect = load("detection_metrics.json", {})
 sim2real = load("sim2real_metrics.json", {})
@@ -180,7 +180,7 @@ else:
 # ---------------------------------------------------------------- vehicle cad
 # Read straight from the CAD solve so the drawing and the document cannot
 # disagree about the vehicle.
-_cadp = os.path.join(os.path.dirname(ROOT), "cad", "varuna_cad_params.json")
+_cadp = os.path.join(os.path.dirname(ROOT), "cad", "isonavi_cad_params.json")
 cad = json.load(open(_cadp)) if os.path.exists(_cadp) else None
 _CAD = (("cadLength", "hull_length_mm", "{:.0f}"),
         ("cadDia", "hull_diameter_mm", "{:.0f}"),
@@ -211,7 +211,7 @@ for _n, _k in (("cadLengthM", "hull_length_mm"), ("cadDiaM",
 cmd("cadBGAssumed", 85.0, "{:.0f}")
 
 # ---------------------------------------------------------------- pressure hull
-_stp = os.path.join(os.path.dirname(ROOT), "cad", "varuna_structures.json")
+_stp = os.path.join(os.path.dirname(ROOT), "cad", "isonavi_structures.json")
 struct = json.load(open(_stp)) if os.path.exists(_stp) else None
 _ST = (("structDepth", "design_depth_m", "{:.0f}"),
        ("structPressure", "design_pressure_MPa", "{:.3f}"),
@@ -231,7 +231,7 @@ for _n, _k, _f in _ST:
     cmd(_n, struct.get(_k) if struct else None, _f)
 
 # ---------------------------------------------------------------- hydrodynamics
-_hyp = os.path.join(os.path.dirname(ROOT), "cad", "varuna_hydro.json")
+_hyp = os.path.join(os.path.dirname(ROOT), "cad", "isonavi_hydro.json")
 hydro = json.load(open(_hyp)) if os.path.exists(_hyp) else None
 _HY = (("hydroCf", "cf", "{:.5f}"),
        ("hydroForm", "form_factor", "{:.3f}"),
@@ -251,7 +251,7 @@ for _n, _k, _f in _HY:
     cmd(_n, hydro.get(_k) if hydro else None, _f)
 
 # ---------------------------------------------------------------- bill of materials
-_bmp = os.path.join(os.path.dirname(ROOT), "cad", "varuna_bom.json")
+_bmp = os.path.join(os.path.dirname(ROOT), "cad", "isonavi_bom.json")
 bom = json.load(open(_bmp)) if os.path.exists(_bmp) else None
 _BM = (("bomTotal", "total_usd", "{:,.0f}"),
        ("bomLakh", "total_lakh_inr", "{:.1f}"),
@@ -263,7 +263,7 @@ for _n, _k, _f in _BM:
     cmd(_n, bom.get(_k) if bom else None, _f)
 
 # ---------------------------------------------------------------- energy
-_enp = os.path.join(os.path.dirname(ROOT), "cad", "varuna_energy.json")
+_enp = os.path.join(os.path.dirname(ROOT), "cad", "isonavi_energy.json")
 energy = json.load(open(_enp)) if os.path.exists(_enp) else None
 _EN = (("enBattery", "battery_wh", "{:.0f}"),
        ("enHotel", "hotel_w", "{:.0f}"),
@@ -279,8 +279,15 @@ _EN = (("enBattery", "battery_wh", "{:.0f}"),
 for _n, _k, _f in _EN:
     cmd(_n, energy.get(_k) if energy else None, _f)
 
+# The spread between slack water and holding the design current is
+# the point of that section, so it is derived here rather than
+# written into the prose and left to go stale.
+_calm = (energy or {}).get("hours_calm")
+_site = (energy or {}).get("hours_at_site_current")
+cmd("enRatio", (_calm / _site) if (_calm and _site) else None, "{:.0f}")
+
 # ---------------------------------------------------------------- redundancy
-_rdp = os.path.join(os.path.dirname(ROOT), "cad", "varuna_redundancy.json")
+_rdp = os.path.join(os.path.dirname(ROOT), "cad", "isonavi_redundancy.json")
 red = json.load(open(_rdp)) if os.path.exists(_rdp) else None
 _RD = (("redSurgeIntact", "surge_intact", "{:.0f}"),
        ("redEnvIntact", "envelope_intact", "{:.2f}"),

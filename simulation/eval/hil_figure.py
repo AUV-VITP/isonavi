@@ -14,7 +14,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-ROOT = os.path.expanduser("~/dev/rakshatech")
+ROOT = os.path.expanduser("~/dev/isonavi")
 FIG = f"{ROOT}/simulation/results/figures"
 HIL = f"{ROOT}/hil/results"
 os.makedirs(FIG, exist_ok=True)
@@ -90,7 +90,7 @@ plt.savefig(f"{FIG}/f12_hil.png", bbox_inches="tight")
 plt.close()
 
 # Equivalence table numbers for the report macros.
-ref = json.load(open(f"{ROOT}/simulation/results/logs/mission_varuna_s1.json"))
+ref = json.load(open(f"{ROOT}/simulation/results/logs/mission_isonavi_s1.json"))
 out = {
     "hil_nav_mean": host["nav_error_mean"],
     "hil_nav_max": host["nav_error_max"],

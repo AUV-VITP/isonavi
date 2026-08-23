@@ -1,7 +1,7 @@
 """Deploy the flight-computer code onto the LicheeRV Nano over SFTP.
 
 Copies only what the board needs: the protocol, the flight computer, and the
-varuna estimation / control / dynamics / mission modules it imports. The board
+isonavi estimation / control / dynamics / mission modules it imports. The board
 gets a self-contained /root/hil tree.
 """
 import os
@@ -10,23 +10,23 @@ import posixpath
 import paramiko
 
 IP = "10.133.84.1"
-REPO = os.path.expanduser("~/dev/rakshatech")  # runs under WSL
+REPO = os.path.expanduser("~/dev/isonavi")  # runs under WSL
 # When run from Windows python this path differs; allow override.
 REPO = os.environ.get("REPO", REPO)
 
 FILES = [
     ("hil/common/hil_protocol.py", "hil/common/hil_protocol.py"),
     ("hil/board/flight_computer.py", "hil/flight_computer.py"),
-    ("simulation/varuna/__init__.py", "hil/varuna/__init__.py"),
-    ("simulation/varuna/estimation.py", "hil/varuna/estimation.py"),
-    ("simulation/varuna/control.py", "hil/varuna/control.py"),
-    ("simulation/varuna/dynamics.py", "hil/varuna/dynamics.py"),
-    ("simulation/varuna/mission.py", "hil/varuna/mission.py"),
-    ("simulation/varuna/geometry.py", "hil/varuna/geometry.py"),
-    ("simulation/varuna/acoustics.py", "hil/varuna/acoustics.py"),
-    ("simulation/varuna/scene.py", "hil/varuna/scene.py"),
-    ("simulation/varuna/sensors.py", "hil/varuna/sensors.py"),
-    ("simulation/varuna/mapping.py", "hil/varuna/mapping.py"),
+    ("simulation/isonavi/__init__.py", "hil/isonavi/__init__.py"),
+    ("simulation/isonavi/estimation.py", "hil/isonavi/estimation.py"),
+    ("simulation/isonavi/control.py", "hil/isonavi/control.py"),
+    ("simulation/isonavi/dynamics.py", "hil/isonavi/dynamics.py"),
+    ("simulation/isonavi/mission.py", "hil/isonavi/mission.py"),
+    ("simulation/isonavi/geometry.py", "hil/isonavi/geometry.py"),
+    ("simulation/isonavi/acoustics.py", "hil/isonavi/acoustics.py"),
+    ("simulation/isonavi/scene.py", "hil/isonavi/scene.py"),
+    ("simulation/isonavi/sensors.py", "hil/isonavi/sensors.py"),
+    ("simulation/isonavi/mapping.py", "hil/isonavi/mapping.py"),
 ]
 
 c = paramiko.SSHClient()
@@ -69,8 +69,8 @@ sftp.close()
 _, out, err = c.exec_command(
     "cd /root/hil && python3 -c '"
     "import sys; sys.path.insert(0,\".\"); sys.path.insert(0,\"common\"); "
-    "import hil_protocol; from varuna.estimation import NavigationEKF; "
-    "from varuna.control import PoseController; "
+    "import hil_protocol; from isonavi.estimation import NavigationEKF; "
+    "from isonavi.control import PoseController; "
     "from flight_computer import FlightComputer; "
     "print(\"board imports OK\")'", timeout=30)
 print("  " + (out.read().decode() + err.read().decode()).strip())

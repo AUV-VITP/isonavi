@@ -33,6 +33,11 @@ PAD = 0.030
 # are drawn over by the box next door.
 BOXPAD = 0.012
 
+# Clearance from the nominal bottom of the header band to the
+# centre of the first content line. It has to exceed BOXPAD, or
+# the band paints over the line's ascenders.
+HEAD_GAP = BOXPAD + 0.022
+
 
 def box_height(lines):
     """Height that actually fits the header plus every content line."""
@@ -53,7 +58,7 @@ def box(ax, x, y, w, title, lines, kind, fs=8.4, h=None):
     ax.text(x + w / 2, y + h - HEAD / 2, title, ha="center", va="center",
             fontsize=fs + 0.6, color="white", fontweight="bold", zorder=5)
     for i, ln in enumerate(lines):
-        ax.text(x + 0.014, y + h - HEAD - 0.020 - i * LINE, ln,
+        ax.text(x + 0.014, y + h - HEAD - HEAD_GAP - i * LINE, ln,
                 ha="left", va="center", fontsize=fs - 0.6, color=INK, zorder=5)
     return h
 
@@ -136,12 +141,12 @@ h_prod = box(ax, 0.735, 0.075, 0.20, "MISSION PRODUCT",
              ["Bathymetric map", "Scour depth, volume", "Target positions",
               "Coverage record", "Timestamped log"], "product", fs=FS_ARCH)
 
-arrow(ax, (0.210, 0.775), (0.255, 0.800), "returns")
-arrow(ax, (0.210, 0.610), (0.255, 0.545), "motion")
+arrow(ax, (0.210, 0.775), (0.255, 0.800), "returns", lab_dy=-0.060)
+arrow(ax, (0.210, 0.610), (0.255, 0.545), "motion", lab_dy=-0.055)
 arrow(ax, (0.440, 0.800), (0.495, 0.800), "frames")
 arrow(ax, (0.440, 0.520), (0.495, 0.545), "meas")
 arrow(ax, (0.588, 0.415 + h_ekf), (0.588, 0.685), "pose",
-      lab_dx=-0.045, lab_dy=-0.004)
+      lab_dx=-0.120, lab_dy=-0.014)
 arrow(ax, (0.680, 0.800), (0.735, 0.720), "map")
 arrow(ax, (0.680, 0.520), (0.735, 0.640), "pose")
 arrow(ax, (0.790, 0.545), (0.680, 0.075 + h_ctl), "waypoint", rad=-0.16)
@@ -193,7 +198,7 @@ stages = [
     ("Display", ["time-varying gain", "polar or fan"]),
 ]
 
-COLS_N, GAP = 3, 0.045
+COLS_N, GAP = 3, 0.062
 W = (1.0 - (COLS_N + 1) * GAP) / COLS_N
 H = box_height(stages[0][1])
 ROW_Y = [0.70, 0.38, 0.06]
