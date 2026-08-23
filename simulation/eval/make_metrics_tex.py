@@ -263,6 +263,23 @@ _EN = (("enBattery", "battery_wh", "{:.0f}"),
 for _n, _k, _f in _EN:
     cmd(_n, energy.get(_k) if energy else None, _f)
 
+# ---------------------------------------------------------------- redundancy
+_rdp = os.path.join(os.path.dirname(ROOT), "cad", "varuna_redundancy.json")
+red = json.load(open(_rdp)) if os.path.exists(_rdp) else None
+_RD = (("redSurgeIntact", "surge_intact", "{:.0f}"),
+       ("redEnvIntact", "envelope_intact", "{:.2f}"),
+       ("redNeed", "need_n", "{:.0f}"),
+       ("redSingleOk", "single_ok", "{}"),
+       ("redPairsOk", "pairs_ok", "{}"),
+       ("redPairsTotal", "pairs_total", "{}"),
+       ("redWorstPct", "worst_single_pct", "{:.0f}"),
+       ("redDegraded", "degraded_best_ms", "{:.2f}"),
+       ("redThrustNeeded", "thrust_for_tolerance_n", "{:.0f}"))
+for _n, _k, _f in _RD:
+    cmd(_n, red.get(_k) if red else None, _f)
+cmd("redWorstSurge",
+    red["worst_single"]["surge"] if red else None, "{:.0f}")
+
 # ---------------------------------------------------------------- detection quality
 _rep = load("repeatability.json", {}) or {}
 cmd("detContacts", _rep.get("contacts_per_run"), "{:.1f}")

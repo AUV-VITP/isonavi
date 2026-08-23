@@ -108,6 +108,28 @@ The two acoustic instruments are 72 percent of it; the hull, propulsion, power
 and the whole autonomy stack together are 9,115 USD. The cheap part is the part
 that is ours.
 
+## Losing a thruster
+
+`redundancy.py` asks, for every single and double failure, whether the
+surviving thrusters can still make the wrench the mission needs with zero net
+moment. That is a linear program, not an inspection of the matrix.
+
+Losing a vertical unit costs heave and nothing else. Losing one of the four
+horizontal units halves surge, from 339 N to 170 N, dropping the holdable
+current from 2.68 to 1.82 m/s, which is below the 2.4 m/s design condition.
+The cause is geometric: the survivor on the light side has to balance two on
+the heavy side.
+
+Heading offset does not rescue it, because turning to gain thrust presents the
+hull broadside and broadside damping is 210 against 38.9 in surge; the best
+degraded envelope over all headings is 1.86 m/s. The fins cannot help either,
+because what binds is sway rather than yaw.
+
+So the vehicle is single fault tolerant for attitude and depth, and not for
+station keeping at the design current. The remedy, if that were required, is
+196 N per thruster instead of 120 N, or six horizontal units instead of four.
+It is recorded as a limitation rather than designed around quietly.
+
 ## Files
 
 | file | what it is |
@@ -120,6 +142,7 @@ that is ours.
 | `hydrodynamics.py` | drag and added mass derived from the geometry |
 | `energy.py` | power and endurance, integrated over the flight log |
 | `bom.py` | bill of materials |
+| `redundancy.py` | thruster-out envelope, by linear program |
 | `scene_render.py` | the vehicle placed in the modelled site |
 | `varuna_vehicle.step` | parametric assembly for CAD |
 | `varuna_cad_params.json` | derived dimensions and the verification numbers |
@@ -137,6 +160,7 @@ python structures.py       # depth rating and pylon loads
 python hydrodynamics.py    # drag build up and the current envelope
 python energy.py           # endurance against current
 python bom.py              # bill of materials
+python redundancy.py       # what a lost thruster costs
 python scene_render.py     # the vehicle in its site
 ```
 
