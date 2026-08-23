@@ -28,8 +28,17 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
 
 from varuna.dynamics import VARUNA_1, vectored_allocation
 
-LIN, QUAD = 22.0, 38.9        # surge damping; quadratic term from the CAD
 SITE_CURRENT = 2.4
+
+# Surge damping. The quadratic term is the CAD derived drag, read from the file
+# that computes it rather than copied, so the two cannot drift apart.
+LIN = VARUNA_1.lin_damp[0]
+_hydro = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                      "varuna_hydro.json")
+if os.path.exists(_hydro):
+    QUAD = json.load(open(_hydro))["drag_total"]
+else:                                   # fall back to the modelled value
+    QUAD = VARUNA_1.quad_damp[0]
 
 
 def max_along(B, axis, limit, hold_moments=True):

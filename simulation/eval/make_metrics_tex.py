@@ -279,6 +279,9 @@ for _n, _k, _f in _RD:
     cmd(_n, red.get(_k) if red else None, _f)
 cmd("redWorstSurge",
     red["worst_single"]["surge"] if red else None, "{:.0f}")
+cmd("redWorstEnv",
+    red["worst_single"]["envelope"] if red else None, "{:.2f}")
+cmd("redHeaveIntact", red.get("heave_intact") if red else None, "{:.0f}")
 
 # ---------------------------------------------------------------- detection quality
 _rep = load("repeatability.json", {}) or {}

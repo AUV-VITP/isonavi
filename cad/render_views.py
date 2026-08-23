@@ -37,12 +37,40 @@ GREY = "#6b7280"
 # Items sealed inside the hull. Painter's algorithm over a long thin hull is
 # not reliable enough to hide them behind the skin, and physically they should
 # not be visible at all, so external views simply leave them out.
+# Above this angle between a facet and its smoothed normal, the
+# edge is treated as real and left sharp.
+COS_CREASE = np.cos(np.radians(38.0))
+
 INTERNAL = ("battery", "electronics", "esc bank", "sonar head", "trim ballast",
             "inertial unit", "ring frame", "rail", "aft closure")
 
 
+
+def trim_png(path, pad=16):
+    """Crop a saved figure to its ink, leaving a small margin.
+
+    Matplotlib's bbox_inches only tightens to the axes bounding box, which for
+    a 3D axes is the full cubic frame whether or not anything is drawn in it.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        return
+    im = Image.open(path).convert("RGB")
+    a = np.asarray(im)
+    ink = (a < 248).any(axis=2)
+    if not ink.any():
+        return
+    ys, xs = np.where(ink)
+    y0 = max(int(ys.min()) - pad, 0)
+    y1 = min(int(ys.max()) + pad + 1, a.shape[0])
+    x0 = max(int(xs.min()) - pad, 0)
+    x1 = min(int(xs.max()) + pad + 1, a.shape[1])
+    im.crop((x0, y0, x1, y1)).save(path)
+
+
 # ------------------------------------------------------------------ meshing
-def tessellate(assy, tol=0.12, ang=0.05, skip=()):
+def tessellate(assy, tol=0.22, ang=0.09, skip=()):
     """Flatten an assembly to (triangles, shading normals, per-triangle rgb).
 
     Shading normals are smooth vertex normals, not facet normals: facet
@@ -71,21 +99,26 @@ def tessellate(assy, tol=0.12, ang=0.05, skip=()):
 
         fn = np.cross(v[f[:, 1]] - v[f[:, 0]], v[f[:, 2]] - v[f[:, 0]])
         fn /= np.maximum(np.linalg.norm(fn, axis=1, keepdims=True), 1e-12)
-        # Tessellation winding is not guaranteed consistent between faces, so
-        # orient every facet away from the part centroid before averaging;
-        # otherwise opposed normals cancel and the surface goes black.
-        ctr = v.mean(axis=0)
-        out = v[f].mean(axis=1) - ctr
-        flip = np.sign(np.einsum("ij,ij->i", fn, out))
-        flip[flip == 0] = 1.0
-        fn *= flip[:, None]
+        # The kernel already winds faces outward consistently: measured, every
+        # facet of the hull and of a solid block points out. Re-orienting them
+        # against the part centroid, which an earlier version did, corrupts
+        # exactly the cases that matter, flipping the inner surface of a duct
+        # and flapping unstably on a flat plate where no centroid direction is
+        # meaningful. So the winding is trusted as given.
 
-        vn = np.zeros_like(v)
+        # Weld coincident vertices so normals blend across face boundaries.
+        _, inv = np.unique(np.round(v, 4), axis=0, return_inverse=True)
+        inv = inv.reshape(-1)
+        vn = np.zeros((int(inv.max()) + 1, 3))
         for k in range(3):
-            np.add.at(vn, f[:, k], fn)
+            np.add.at(vn, inv[f[:, k]], fn)
         vn /= np.maximum(np.linalg.norm(vn, axis=1, keepdims=True), 1e-12)
-        sn = vn[f].mean(axis=1)
+        sn = vn[inv[f]].mean(axis=1)
         sn /= np.maximum(np.linalg.norm(sn, axis=1, keepdims=True), 1e-12)
+        # Crease test: where smoothing has swung the normal far from the face
+        # it belongs to, the edge is real and the facet normal is kept.
+        crease = np.einsum("ij,ij->i", sn, fn) < COS_CREASE
+        sn[crease] = fn[crease]
 
         rgb = child.color.toTuple()[:3] if child.color else (0.75, 0.75, 0.78)
         tris.append(v[f])
@@ -115,7 +148,10 @@ def shade(n, base, elev, azim, ambient=0.30):
     dif = 0.72 * np.clip(n @ key, 0, 1) + 0.26 * np.clip(n @ fill, 0, 1)
     half = key + view
     half /= np.linalg.norm(half)
-    spec = 0.34 * np.clip(n @ half, 0, 1) ** 42
+    # A tight highlight bands badly, because PolyCollection fills each
+    # triangle with one colour and cannot interpolate across it. A broader
+    # lobe spreads the same energy over enough facets to read as smooth.
+    spec = 0.26 * np.clip(n @ half, 0, 1) ** 13
     return np.clip(base * (amb + dif)[:, None] + spec[:, None], 0, 1)
 
 
@@ -166,7 +202,20 @@ def hero(tris, norms, cols, info):
     plt.savefig(f"{OUT}/varuna_hero.png", dpi=155, facecolor="white",
                 bbox_inches="tight")
     plt.close()
+    trim_png(f"{OUT}/varuna_hero.png")
     print("wrote varuna_hero.png")
+
+    # A caption-free version. On the title page the surrounding document
+    # already names the vehicle, so the overlay only competes with it.
+    fig = plt.figure(figsize=(13.5, 6.4), facecolor="white")
+    ax = fig.add_subplot(111, projection="3d", facecolor="white")
+    draw(ax, tris, norms, cols, 19, -57, zoom=0.94)
+    plt.tight_layout()
+    plt.savefig(f"{OUT}/varuna_hero_plain.png", dpi=155, facecolor="white",
+                bbox_inches="tight")
+    plt.close()
+    trim_png(f"{OUT}/varuna_hero_plain.png")
+    print("wrote varuna_hero_plain.png")
 
 
 def general_arrangement(tris, norms, cols, info):
@@ -189,6 +238,7 @@ def general_arrangement(tris, norms, cols, info):
     plt.savefig(f"{OUT}/varuna_ga.png", dpi=145, facecolor="white",
                 bbox_inches="tight")
     plt.close()
+    trim_png(f"{OUT}/varuna_ga.png")
     print("wrote varuna_ga.png")
 
 
@@ -315,6 +365,7 @@ def dimensioned(tris, norms, cols, info, geom):
     plt.savefig(f"{OUT}/varuna_dimensioned.png", dpi=155, facecolor="white",
                 bbox_inches="tight")
     plt.close()
+    trim_png(f"{OUT}/varuna_dimensioned.png")
     print("wrote varuna_dimensioned.png")
 
 
@@ -372,6 +423,7 @@ def cutaway():
     plt.savefig(f"{OUT}/varuna_cutaway.png", dpi=155, facecolor="white",
                 bbox_inches="tight")
     plt.close()
+    trim_png(f"{OUT}/varuna_cutaway.png")
     print("wrote varuna_cutaway.png")
 
 
@@ -386,6 +438,7 @@ def exploded():
     plt.savefig(f"{OUT}/varuna_exploded.png", dpi=150, facecolor="white",
                 bbox_inches="tight")
     plt.close()
+    trim_png(f"{OUT}/varuna_exploded.png")
     print("wrote varuna_exploded.png")
 
 

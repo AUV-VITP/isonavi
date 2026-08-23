@@ -61,6 +61,15 @@ def arrow(ax, p0, p1, label=None, style="-|>", col=MUTED, rad=0.0, fs=7.4):
                 bbox=dict(fc="white", ec="none", pad=0.8))
 
 
+
+def on_board(ax, x, y, w, h, pad=0.012):
+    """Dashed halo marking a block as running on the flight computer."""
+    ax.add_patch(FancyBboxPatch(
+        (x - pad, y - pad), w + 2 * pad, h + 2 * pad,
+        boxstyle="round,pad=0.004,rounding_size=0.012",
+        fc="none", ec="#111827", lw=1.5, ls=(0, (5, 3)), zorder=5))
+
+
 # ======================================================================
 fig, ax = plt.subplots(figsize=(14.5, 8.6))
 ax.set_xlim(0, 1); ax.set_ylim(-0.03, 1.13); ax.axis("off")
@@ -109,6 +118,16 @@ arrow(ax, (0.495, 0.150), (0.440, 0.150), "wrench")
 arrow(ax, (0.300, 0.075 + h_veh), (0.150, 0.50), "thrust", rad=0.22)
 arrow(ax, (0.390, 0.075 + h_veh), (0.390, 0.435), "true state")
 arrow(ax, (0.835, 0.545), (0.835, 0.075 + h_prod), "report")
+
+# Estimation, control and the mission state machine were executed on the
+# RISC-V flight computer for the hardware-in-the-loop run; mapping and
+# detection are host side and are not marked.
+on_board(ax, 0.495, 0.415, 0.185, h_ekf)
+on_board(ax, 0.495, 0.075, 0.185, h_ctl)
+on_board(ax, 0.735, 0.545, 0.20, h_mis)
+ax.text(0.935, 0.545 + h_mis + 0.030,
+        "dashed: runs on the RISC-V flight computer",
+        fontsize=8.6, color="#111827", ha="right", style="italic")
 
 ax.text(0.015, 1.085, "VARUNA system architecture", fontsize=15,
         fontweight="bold", color=INK)
