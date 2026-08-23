@@ -380,6 +380,65 @@ implies. The design still holds, on a thinner margin than previously stated,
 and the honest reading is that a further drag increase of a quarter would put
 the vehicle out of envelope at this site.
 
+\subsubsection{What happens when a thruster is lost}
+
+A vehicle sent into a debris field will eventually lose a thruster, to line,
+rubble or flooding. Eight units driving six degrees of freedom leaves two
+spare, so the question is not whether the allocation is over-determined, which
+it plainly is, but whether the survivors can still produce the particular
+wrench the mission needs while holding attitude. That is a linear program, not
+an inspection of the matrix: for each failure, the largest force along an axis
+with zero net moment and every surviving unit inside its saturation limit.
+
+Intact, the vehicle makes \SI{\redSurgeIntact}{\newton} of surge, holding to
+\SI{\redEnvIntact}{\metre\per\second}. Station keeping at the site needs
+\SI{\redNeed}{\newton}.
+
+\begin{table}[htbp]\centering\small
+\caption{Single thruster failures. Vertical failures cost heave and nothing
+else; horizontal failures halve surge.}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Failure} & \textbf{Surge} & \textbf{Envelope} & \textbf{Holds site} \\
+\midrule
+None & \SI{339}{\newton} & \SI{2.68}{\metre\per\second} & yes \\
+Any one vertical unit & \SI{339}{\newton} & \SI{2.68}{\metre\per\second} &
+yes \\
+Any one horizontal unit & \SI{170}{\newton} & \SI{1.82}{\metre\per\second} &
+no \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Losing a vertical thruster costs heave authority and nothing else. Losing a
+horizontal one costs half the surge, and the reason is geometric rather than
+incidental: the four horizontal units are canted in opposing pairs, so the
+single survivor on the light side has to balance the two on the heavy side, and
+the pair it balances against is capped by its own limit.
+
+Heading offset does not recover it. Turning off the flow to present a better
+thrust direction also presents the hull broadside, and broadside quadratic
+damping on this hull is \num{210} against \num{38.9} in surge. Sweeping heading
+and carrying that penalty honestly, the best degraded envelope is
+\SI{\redDegraded}{\metre\per\second}, against
+\SI{1.82}{\metre\per\second} nose on. The fins cannot help either, because what
+binds is sway, not yaw.
+
+The conclusion is therefore mixed and is stated as such. The vehicle is single
+fault tolerant for attitude and for depth. It is not single fault tolerant for
+station keeping at the design current: after a horizontal failure it holds to
+\SI{\redDegraded}{\metre\per\second} and must otherwise abort downstream, which
+is always available because the flow assists it. Of the
+\redPairsTotal{} possible double failures, \redPairsOk{} still hold station,
+and the worst pair, both units on one side, leaves no surge at all.
+
+If single fault tolerance at the design current were made a requirement, the
+remedy is \SI{\redThrustNeeded}{\newton} per thruster instead of
+\SI{120}{\newton}, or six horizontal units instead of four. Both cost drag,
+mass and money. The limitation is recorded here rather than designed around
+quietly, because which of those a funder wants to buy is their decision and not
+ours.
+
 \subsubsection{What the budget caught}\label{sec:cad-budget}
 
 The separation between centre of buoyancy and centre of gravity sets the
@@ -1058,6 +1117,10 @@ footprint.
 \detFalsePerHa{} spurious contacts per hectare accompany the real ones, and the
 flat deck slab is missed in two runs of \detRuns{}. The output is a contact
 list for a dive team, not an identification.
+\item \textbf{Not single fault tolerant for station keeping.} Losing one of
+the four horizontal thrusters halves surge and drops the holdable current to
+\SI{\redDegraded}{\metre\per\second}, below the design condition. Attitude and
+depth control survive any single failure.
 \item \textbf{The stability margin is now CAD derived, not assumed}, but the
 hydrodynamic coefficients around it remain estimates. The
 \SI{\cadBG}{\milli\metre} separation replaced an assumed
