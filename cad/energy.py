@@ -46,6 +46,30 @@ HOTEL = {
 }
 
 
+
+def trim_png(path, pad=16):
+    """Crop a saved figure to its ink, leaving a small margin.
+
+    Matplotlib's bbox_inches only tightens to the axes bounding box, which for
+    a 3D axes is the full cubic frame whether or not anything is drawn in it.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        return
+    im = Image.open(path).convert("RGB")
+    a = np.asarray(im)
+    ink = (a < 248).any(axis=2)
+    if not ink.any():
+        return
+    ys, xs = np.where(ink)
+    y0 = max(int(ys.min()) - pad, 0)
+    y1 = min(int(ys.max()) + pad + 1, a.shape[0])
+    x0 = max(int(xs.min()) - pad, 0)
+    x1 = min(int(xs.max()) + pad + 1, a.shape[1])
+    im.crop((x0, y0, x1, y1)).save(path)
+
+
 def prop_power(thrust_n):
     """Shaft power for one thruster at a given thrust, momentum theory."""
     t = np.abs(np.asarray(thrust_n, float))
@@ -113,6 +137,7 @@ def figure(out, log):
                          "varuna_energy.png")
     plt.savefig(p_out, dpi=150, facecolor="white", bbox_inches="tight")
     plt.close()
+    trim_png(p_out)
     print(f"  wrote {os.path.basename(p_out)}")
 
 

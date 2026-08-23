@@ -43,14 +43,14 @@
 
 \begin{titlepage}
 \centering
-\vspace*{1.4cm}
+\vspace*{0.35cm}
 {\color{accent}\rule{\linewidth}{1.2pt}}\\[4mm]
 {\Huge\bfseries VARUNA}\\[3mm]
-{\Large Autonomous Underwater Reconnaissance and Assessment\\ for Post-Flood Disaster Response}\\[3mm]
-{\color{accent}\rule{\linewidth}{1.2pt}}\\[10mm]
+{\Large Autonomous Underwater Reconnaissance and Assessment\\ for Post-Flood Disaster Response}\\[2mm]
+{\color{accent}\rule{\linewidth}{1.2pt}}\\[6mm]
 
 {\large Technical Design and Verification Report}\\[3mm]
-{\normalsize Simulation, autonomy and acoustic perception for zero-visibility,\\ high-current Indian river conditions}\\[14mm]
+{\normalsize Simulation, autonomy and acoustic perception for zero-visibility,\\ high-current Indian river conditions}\\[8mm]
 
 \begin{minipage}{0.86\linewidth}
 \small
@@ -66,9 +66,10 @@ Three results are established. First, the commercial platform normally assumed
 for this role cannot perform it: an open frame vehicle of that class holds
 station only to \SI{0.96}{\metre\per\second} against a design current of
 \SI{\siteCurrent}{\metre\per\second}. Second, a purpose designed faired
-vehicle raises that envelope to \SI{\misEnvelope}{\metre\per\second} and
-completes a \SI{\misPath}{\metre} autonomous survey with a mean navigation
-error of \SI{\misNavMean}{\metre} without any external positioning. Third,
+vehicle raises that envelope to \SI{\hydroEnvCad}{\metre\per\second} on drag
+derived from its own geometry, and completes a \SI{\misPath}{\metre} autonomous
+survey with a mean navigation error of \SI{\misNavMean}{\metre} without any
+external positioning. Third,
 submerged vehicles are located from the resulting bathymetric map with no
 training data at all, at a mean localisation error of
 \SI{\repDetErrMean}{\metre}, reducing an unsearchable survey box to roughly
@@ -77,6 +78,27 @@ autonomy running on a RISC-V flight computer, reproducing the simulation result
 to within centimetres inside the real-time control budget, which moves the
 maturity claim from simulated to hardware-validated.
 \end{minipage}
+
+\vspace{3mm}
+\includegraphics[width=0.74\linewidth]{../cad/varuna_hero_plain.png}
+
+\vspace{3mm}
+\begin{minipage}{0.94\linewidth}
+\centering\small
+\renewcommand{\arraystretch}{1.05}\footnotesize
+\begin{tabular}{@{}lc@{\hspace{7mm}}lc@{}}
+\toprule
+Station keeping envelope & \SI{\hydroEnvCad}{\metre\per\second} &
+Navigation error, no external fix & \SI{\misNavMean}{\metre} \\
+Autonomous mission & \SI{\misPath}{\metre}, \SI{\misDurationMin}{min} &
+Bathymetric map error & \SI{\repMapRmseMean}{\metre} \\
+On a RISC-V flight computer & \SI{\hilNavMean}{\metre} &
+Endurance, slack to design current & \enHoursCalm{} to \SI{\enHoursSite}{\hour} \\
+Depth rating & \SI{\structDepth}{\metre} &
+Parts cost, one airframe & \SI{\bomLakh}{} lakh INR \\
+\bottomrule
+\end{tabular}
+\end{minipage}\label{atglance}
 
 \vfill
 {\small Prepared for RakshaTech Synapse 2026\\
@@ -390,7 +412,8 @@ wrench the mission needs while holding attitude. That is a linear program, not
 an inspection of the matrix: for each failure, the largest force along an axis
 with zero net moment and every surviving unit inside its saturation limit.
 
-Intact, the vehicle makes \SI{\redSurgeIntact}{\newton} of surge, holding to
+Intact, the vehicle makes \SI{\redSurgeIntact}{\newton} of surge and
+\SI{\redHeaveIntact}{\newton} of heave, holding station to
 \SI{\redEnvIntact}{\metre\per\second}. Station keeping at the site needs
 \SI{\redNeed}{\newton}.
 
@@ -401,11 +424,12 @@ else; horizontal failures halve surge.}
 \toprule
 \textbf{Failure} & \textbf{Surge} & \textbf{Envelope} & \textbf{Holds site} \\
 \midrule
-None & \SI{339}{\newton} & \SI{2.68}{\metre\per\second} & yes \\
-Any one vertical unit & \SI{339}{\newton} & \SI{2.68}{\metre\per\second} &
-yes \\
-Any one horizontal unit & \SI{170}{\newton} & \SI{1.82}{\metre\per\second} &
-no \\
+None & \SI{\redSurgeIntact}{\newton} & \SI{\redEnvIntact}{\metre\per\second}
+& yes \\
+Any one vertical unit & \SI{\redSurgeIntact}{\newton} &
+\SI{\redEnvIntact}{\metre\per\second} & yes \\
+Any one horizontal unit & \SI{\redWorstSurge}{\newton} &
+\SI{\redWorstEnv}{\metre\per\second} & no \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -421,7 +445,7 @@ thrust direction also presents the hull broadside, and broadside quadratic
 damping on this hull is \num{210} against \num{38.9} in surge. Sweeping heading
 and carrying that penalty honestly, the best degraded envelope is
 \SI{\redDegraded}{\metre\per\second}, against
-\SI{1.82}{\metre\per\second} nose on. The fins cannot help either, because what
+\SI{\redWorstEnv}{\metre\per\second} nose on. The fins cannot help either, because what
 binds is sway, not yaw.
 
 The conclusion is therefore mixed and is stated as such. The vehicle is single
@@ -1128,7 +1152,7 @@ hydrodynamic coefficients around it remain estimates. The
 \end{itemize}
 
 % ======================================================================
-\section{What it costs, and where it sits}
+\section{What it costs, and where it sits}\label{sec:cost}
 
 \subsection{Bill of materials}
 
@@ -1226,13 +1250,16 @@ validated on real sonar data. The path to a field system is:
 \textbf{Phase} & \textbf{Work} & \textbf{Evidence produced} \\
 \midrule
 Now &
-Simulation, autonomy, mapping, perception, verification &
-This report, the repository, and the hardware-in-the-loop run \\
+Simulation, autonomy, mapping and perception; a closed design loop from the
+vehicle CAD back into the physics; the full mission executing on a RISC-V
+flight computer &
+This report and the repository; a mass, stability and energy budget that
+closes; the autonomy validated on flight hardware \\
 Months 1 to 6 &
-CFD and tow tank validation of the faired hull; hardware in the loop with
-flight controller and edge compute; indigenous thruster and pressure housing
-sourcing &
-Measured hydrodynamic coefficients; autonomy running on target hardware \\
+CFD and tow tank validation of the faired hull; a pressure test of the hull
+section; indigenous thruster and pressure housing sourcing &
+Measured hydrodynamic coefficients in place of the closed form estimates here;
+a qualified depth rating \\
 Months 7 to 12 &
 Integrated vehicle; tank and reservoir trials; DVL and sonar integration &
 Wet testing against surveyed targets \\
@@ -1244,11 +1271,19 @@ Field data at operational current and turbidity \\
 \end{tabular}
 \end{table}
 
-The autonomy and perception software is the defensible indigenous content. The
-hardware baseline starts from proven components to remove mechanical risk and
-is intended to be progressively indigenised across the programme, with the
-pressure housing, thrusters and eventually the Doppler velocity log as the
-targets in that order.
+The autonomy and perception software is the defensible indigenous content, and
+the bill of materials in Section~\ref{sec:cost} shows why that is the right
+place to have spent the effort: it runs on hardware costing a few hundred
+dollars, while \SI{\bomAcousticsPct}{\percent} of the vehicle cost sits in two
+imported acoustic instruments.
+
+The hardware baseline therefore starts from proven components to remove
+mechanical risk, and is intended to be progressively indigenised in cost order
+rather than in order of ease. The imaging sonar is the largest single line and
+is the eventual target; the doppler log is second; the pressure housing and
+thrusters are the near term ones because they are the achievable ones. Nothing
+in this report depends on that sequence being completed, which is the point of
+having measured where the money actually goes.
 
 % ======================================================================
 \section*{Reproducing these results}
@@ -1262,6 +1297,19 @@ python eval/run_mission.py       full autonomous mission
 python eval/make_figures.py      report figures
 python eval/detect_eval.py       geometric target detection
 python eval/sim2real.py          zero-shot transfer test
+
+cad/varuna_layout.py             mass, buoyancy and trim budget
+cad/varuna_cad.py                geometry, STEP and STL
+cad/verify_cad.py                layout against the geometry kernel
+cad/structures.py                depth rating and pylon loads
+cad/hydrodynamics.py             drag and added mass from the geometry
+cad/energy.py                    power and endurance
+cad/redundancy.py                thruster-out envelope
+cad/bom.py                       bill of materials
+
+hil/test_hil_loopback.py         full loop, no hardware
+hil/deploy_board.py              push the autonomy to the flight computer
+hil/run_hil.py                   mission on the real board
 \end{verbatim}
 
 \end{document}
