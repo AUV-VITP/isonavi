@@ -334,6 +334,11 @@ def build(cutaway=False, explode=0.0):
     assy = cq.Assembly()
 
     def add(solid, name, color, offset=(0, 0, 0)):
+        # offset is a direction and a magnitude in units of explode, and
+        # is ignored unless the caller asked for an exploded assembly.
+        # The convention: along the axis for the parts that separate
+        # axially, radially out for every appendage so each leaves along
+        # its own radius, down for the keel, up for the spine.
         if solid is None:
             return
         if explode:
@@ -355,42 +360,43 @@ def build(cutaway=False, explode=0.0):
         knife = (cq.Workplane("XY").box(4000, 1000, 1000)
                  .translate((X_WINDOW + 2000, 0, 0)))
         add(hull.cut(knife), "hull", C_HULL)
-        add(hull.intersect(knife), "acoustic window", C_WINDOW)
+        add(hull.intersect(knife), "acoustic window", C_WINDOW, (1.5, 0, 0))
 
     # -- internals
     p = pos["battery pack 14S4P"]
     add(battery_pack().translate((p[0] * MM, p[1] * MM, p[2] * MM)),
-        "battery", C_BATT, (0, 0, -1))
+        "battery", C_BATT, (0, 0, -1.5))
     p = pos["electronics stack"]
     add(electronics_stack().translate((p[0] * MM, p[1] * MM, p[2] * MM)),
-        "electronics", C_PCB, (0, 0, 1))
+        "electronics", C_PCB, (0, 0, -1.5))
     p = pos["thruster ESC bank"]
     add(esc_bank().translate((p[0] * MM, p[1] * MM, p[2] * MM)),
-        "esc bank", C_DARK, (0, 0, 1))
+        "esc bank", C_DARK, (0, 0, -1.5))
     p = pos["forward looking sonar"]
     add(sonar_head().translate((p[0] * MM - 28, p[1] * MM, p[2] * MM)),
-        "sonar head", C_METAL, (1, 0, 0))
+        "sonar head", C_METAL, (2.0, 0, 0))
     p = pos["trim ballast"]
     add(ballast_blocks(mass["trim ballast"], p[0] * MM, p[2] * MM),
-        "trim ballast", C_LEAD, (0, 0, -1))
+        "trim ballast", C_LEAD, (0, 0, -2.4))
     p = pos["inertial unit"]
     add(cq.Workplane("XY", origin=(p[0] * MM, p[1] * MM, p[2] * MM))
         .box(58, 58, 26).edges("|Z").fillet(4), "inertial unit", C_DARK,
-        (0, 0, 1))
+        (0, 0, -1.5))
 
     # ring frames at the mid-body quarter points
     for xr in (-0.20, 0.0, 0.20):
         add(ring_frame(L.HULL_R * MM - L.SKIN_T * MM)
-            .translate((xr * MM, 0, 0)), f"ring frame {xr}", C_METAL)
+            .translate((xr * MM, 0, 0)), f"ring frame {xr}", C_METAL,
+            (0, 0, 2.2))
 
     # equipment rails along the keel
     for sy in (-1, 1):
         add(cq.Workplane("XY", origin=(0, sy * 52, -0.052 * MM))
-            .box(620, 16, 10), f"rail {sy}", C_METAL)
+            .box(620, 16, 10), f"rail {sy}", C_METAL, (0, sy * 1.7, -0.7))
 
     p = pos["aft closure and penetrator plate"]
     add(penetrator_plate().translate((p[0] * MM, 0, 0)),
-        "aft closure", C_METAL, (-1, 0, 0))
+        "aft closure", C_METAL, (-1.6, 0, 0))
 
     x_c = L.NOSE_L + geom["l_mid"] / 2
 
@@ -403,15 +409,15 @@ def build(cutaway=False, explode=0.0):
             d = tuple(t - r for t, r in zip(tip, root))
             ln = math.sqrt(sum(c * c for c in d))
             add(align_z(lens_strut(ln, 52, 17), d, root),
-                f"pylon h {sx}{sy}", C_ACCENT, (0, sy, 0))
+                f"pylon h {sx}{sy}", C_ACCENT, (0, sy * 0.9, 0))
             cant = 45 * sx * sy if sx > 0 else 135 * (1 if sy > 0 else -1)
             cant = {(1, 1): 45, (1, -1): -45,
                     (-1, 1): 135, (-1, -1): -135}[(sx, sy)]
             add(thruster().rotate((0, 0, 0), (0, 0, 1), cant).translate(tip),
-                f"thruster h {sx}{sy}", C_DARK, (sx * 0.4, sy, 0))
+                f"thruster h {sx}{sy}", C_DARK, (0, sy * 1.9, 0))
             add(thruster_collar(0.100).rotate((0, 0, 0), (0, 0, 1), cant)
                 .translate(tip), f"collar h {sx}{sy}", C_METAL,
-                (sx * 0.4, sy, 0))
+                (0, sy * 1.9, 0))
 
     z_v = (L.HULL_R + 0.055) * MM
     for sx in (+1, -1):
@@ -422,12 +428,13 @@ def build(cutaway=False, explode=0.0):
             d = tuple(t - r for t, r in zip(tip, root))
             ln = math.sqrt(sum(c * c for c in d))
             add(align_z(lens_strut(ln, 46, 16), d, root),
-                f"pylon v {sx}{sy}", C_ACCENT, (0, sy, 0.4))
+                f"pylon v {sx}{sy}", C_ACCENT, (0, sy * 0.25, 0.9))
             add(thruster(0.092, 0.080)
                 .rotate((0, 0, 0), (0, 1, 0), 90).translate(tip),
-                f"thruster v {sx}{sy}", C_DARK, (0, sy, 1))
+                f"thruster v {sx}{sy}", C_DARK, (0, sy * 0.5, 2.0))
             add(thruster_collar(0.092).rotate((0, 0, 0), (0, 1, 0), 90)
-                .translate(tip), f"collar v {sx}{sy}", C_METAL, (0, sy, 1))
+                .translate(tip), f"collar v {sx}{sy}", C_METAL,
+                (0, sy * 0.5, 2.0))
 
     # -- cruciform stabilisers on the tail cone
     le_x, root_c = -0.320, 0.155
@@ -441,46 +448,48 @@ def build(cutaway=False, explode=0.0):
     r_te = hull_r_at(le_x - root_c) * MM - 3
     for ang in (0, 90, 180, 270):
         f = fin(le_x * MM, root_c * MM, 72, 104, 54, r_le, r_te)
+        # The fins open as a cruciform, each along the radius it sits on.
+        _a = math.radians(ang)
         add(f.rotate((0, 0, 0), (1, 0, 0), ang), f"fin {ang}", C_ACCENT,
-            (0, 0, 0))
+            (0, -math.sin(_a) * 1.5, math.cos(_a) * 1.5))
 
     # -- ancillary hardware, everything the vehicle needs to be operated
     C_ZINC = cq.Color(0.72, 0.74, 0.77, 1.0)
     for sx in (+1, -1):
         p = pos[f"sacrificial anode {sx:+d}"]
         add(anode().translate((p[0] * MM, 0, p[2] * MM)),
-            f"anode {sx}", C_ZINC, (0, 0, -1))
+            f"anode {sx}", C_ZINC, (0, 0, -1.0))
 
     p = pos["lifting eye"]
     add(lifting_eye().translate((p[0] * MM, 0, L.HULL_R * MM - 2)),
-        "lifting eye", C_METAL, (0, 0, 1))
+        "lifting eye", C_METAL, (0, 0, 1.2))
 
     p = pos["antenna and strobe mast"]
     add(mast().translate((p[0] * MM, 0, L.HULL_R * MM - 4)),
-        "antenna mast", C_ACCENT, (0, 0, 1))
+        "antenna mast", C_ACCENT, (0, 0, 2.0))
 
     p = pos["drop weight, releasable"]
     add(drop_weight().translate((p[0] * MM, 0, p[2] * MM)),
-        "drop weight", C_LEAD, (0, 0, -1))
+        "drop weight", C_LEAD, (0, 0, -2.2))
 
     # Hull separation joints, at the nose and tail bulkheads.
     x_nose_j = (x_c - L.NOSE_L) * MM
     x_tail_j = (x_c - geom["x_mid_end"]) * MM
     add(clamp_band(L.HULL_R * MM).translate((x_nose_j, 0, 0)),
-        "clamp band forward", C_METAL)
+        "clamp band forward", C_METAL, (0.9, 0, 0))
     add(clamp_band(L.HULL_R * MM).translate((x_tail_j, 0, 0)),
-        "clamp band aft", C_METAL)
+        "clamp band aft", C_METAL, (-0.9, 0, 0))
 
     add(vent_port().translate((0.150 * MM, 0, L.HULL_R * MM - 2)),
-        "vent port", C_METAL, (0, 0, 1))
+        "vent port", C_METAL, (0, 0, 1.2))
 
     # -- belly acoustics
     p = pos["doppler velocity log"]
     add(dvl_head().translate((p[0] * MM, 0, p[2] * MM + 20)),
-        "doppler velocity log", C_METAL, (0, 0, -1))
+        "doppler velocity log", C_METAL, (0, 0, -1.8))
     p = pos["depth transducer"]
     add(cq.Workplane("XY", origin=(p[0] * MM, 0, p[2] * MM)).circle(13)
-        .extrude(16), "depth transducer", C_METAL, (0, 0, -1))
+        .extrude(16), "depth transducer", C_METAL, (0, 0, -1.8))
 
     return assy, hull, geom, v_hull, parts
 

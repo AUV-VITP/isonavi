@@ -21,6 +21,8 @@ COLS = {
 }
 
 
+FS_ARCH = 10.0
+
 HEAD = 0.052
 LINE = 0.038
 PAD = 0.030
@@ -70,15 +72,21 @@ def wrap_arrow(ax, x_from, y_from, x_to, y_to, band, col=MUTED):
                                  lw=1.3, color=col, zorder=2))
 
 
-def arrow(ax, p0, p1, label=None, style="-|>", col=MUTED, rad=0.0, fs=7.4):
+def arrow(ax, p0, p1, label=None, style="-|>", col=MUTED, rad=0.0,
+          fs=8.6, lab_dx=0.0, lab_dy=0.016):
     ax.add_patch(FancyArrowPatch(p0, p1, arrowstyle=style, mutation_scale=13,
                                  lw=1.3, color=col, zorder=2,
                                  connectionstyle=f"arc3,rad={rad}"))
     if label:
         mx, my = (p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2
-        ax.text(mx, my + 0.016, label, ha="center", va="bottom", fontsize=fs,
-                color=col, style="italic",
-                bbox=dict(fc="white", ec="none", pad=0.8))
+        # Above the boxes, not under them. Box bodies sit at zorder 3 and the
+        # header bands at 4, so a label left at the text default of 3 was
+        # drawn first and then buried by whichever box it ran alongside.
+        ax.text(mx + lab_dx, my + lab_dy, label, ha="center", va="bottom",
+                fontsize=fs,
+                color=col, style="italic", zorder=8,
+                bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none",
+                          alpha=1.0))
 
 
 
@@ -91,46 +99,49 @@ def on_board(ax, x, y, w, h, pad=0.012):
 
 
 # ======================================================================
-fig, ax = plt.subplots(figsize=(14.5, 8.6))
-ax.set_xlim(0, 1); ax.set_ylim(-0.03, 1.13); ax.axis("off")
+# Drawn near the size it is printed at, so the type survives the
+# downscale to the text block. Aspect matches the canvas it replaces.
+fig, ax = plt.subplots(figsize=(9.6, 5.81))
+ax.set_xlim(0, 1); ax.set_ylim(0.028, 0.975); ax.axis("off")
 
-ENV = ["Bathymetry and scour", "Bridge piers, deck span", "Submerged vehicles",
-       "Debris field", "Depth-varying current", "Suspended sediment"]
+ENV = ["Bathymetry and scour", "Piers and deck span", "Submerged vehicles",
+       "Debris field", "Depth-varying flow", "Suspended sediment"]
 h_env = box_height(ENV)
-box(ax, 0.015, 0.50, 0.195, "ENVIRONMENT", ENV, "world")
+box(ax, 0.015, 0.50, 0.195, "ENVIRONMENT", ENV, "world", fs=FS_ARCH)
 
 h_son = box(ax, 0.255, 0.685, 0.185, "SONAR",
-            ["Sonar equation per cell", "Ray-cast occlusion",
-             "Elevation ambiguity", "Gamma speckle"], "sense")
+            ["Sonar equation", "Ray-cast occlusion",
+             "Elevation ambiguity", "Gamma speckle"], "sense", fs=FS_ARCH)
 h_nav = box(ax, 0.255, 0.435, 0.185, "NAV SENSORS",
-            ["DVL, bottom lock loss", "IMU, gyro bias walk", "Depth cell"], "sense")
+            ["DVL, lock dropouts", "IMU, gyro bias walk", "Depth cell"], "sense", fs=FS_ARCH)
 
 h_map = box(ax, 0.495, 0.685, 0.185, "MAPPING",
             ["Swath soundings", "Bathymetric grid", "Scour estimator",
-             "Residual detector"], "estimate")
+             "Residual detector"], "estimate", fs=FS_ARCH)
 h_ekf = box(ax, 0.495, 0.415, 0.185, "EKF",
-            ["12 states: position,", "velocity, attitude,", "gyro bias",
-             "Reports own sigma"], "estimate")
+            ["12 states", "position, velocity", "attitude, gyro bias",
+             "Reports own sigma"], "estimate", fs=FS_ARCH)
 
 h_mis = box(ax, 0.735, 0.545, 0.20, "MISSION",
             ["State machine", "DEPLOY, ACQUIRE", "SEARCH, INSPECT",
-             "RETURN, REPORT", "Lawnmower and orbit", "Heading into flow"], "decide")
+             "RETURN, REPORT", "Lawnmower and orbit", "Heading into flow"], "decide", fs=FS_ARCH)
 
 h_ctl = box(ax, 0.495, 0.075, 0.185, "CONTROL",
             ["Cascaded pose loop", "Force feedforward", "Current estimator",
-             "Prioritised allocation:", "force before torque"], "act")
+             "Priority allocation", "Force before torque"], "act", fs=FS_ARCH)
 h_veh = box(ax, 0.255, 0.075, 0.185, "VEHICLE",
             ["6-DOF Fossen model", "Added mass, Coriolis", "Fin stabilisation",
-             "8 vectored thrusters", "Thruster lag"], "act")
+             "8 vectored thrusters", "Thruster lag"], "act", fs=FS_ARCH)
 h_prod = box(ax, 0.735, 0.075, 0.20, "MISSION PRODUCT",
              ["Bathymetric map", "Scour depth, volume", "Target positions",
-              "Coverage record", "Timestamped log"], "product")
+              "Coverage record", "Timestamped log"], "product", fs=FS_ARCH)
 
 arrow(ax, (0.210, 0.775), (0.255, 0.800), "returns")
 arrow(ax, (0.210, 0.610), (0.255, 0.545), "motion")
 arrow(ax, (0.440, 0.800), (0.495, 0.800), "frames")
 arrow(ax, (0.440, 0.520), (0.495, 0.545), "meas")
-arrow(ax, (0.588, 0.415 + h_ekf), (0.588, 0.685), "pose")
+arrow(ax, (0.588, 0.415 + h_ekf), (0.588, 0.685), "pose",
+      lab_dx=-0.045, lab_dy=-0.004)
 arrow(ax, (0.680, 0.800), (0.735, 0.720), "map")
 arrow(ax, (0.680, 0.520), (0.735, 0.640), "pose")
 arrow(ax, (0.790, 0.545), (0.680, 0.075 + h_ctl), "waypoint", rad=-0.16)
@@ -145,9 +156,9 @@ arrow(ax, (0.835, 0.545), (0.835, 0.075 + h_prod), "report")
 on_board(ax, 0.495, 0.415, 0.185, h_ekf)
 on_board(ax, 0.495, 0.075, 0.185, h_ctl)
 on_board(ax, 0.735, 0.545, 0.20, h_mis)
-ax.text(0.935, 0.545 + h_mis + 0.030,
-        "dashed: runs on the RISC-V flight computer",
-        fontsize=8.6, color="#111827", ha="right", style="italic")
+ax.text(0.935, 0.940, "dashed: runs on the RISC-V flight computer",
+        fontsize=9.6, color="#111827", ha="right", style="italic",
+        va="bottom", zorder=8)
 
 # No title or subtitle here: the figure carries a caption in the document
 # that says the same thing, and repeating it wastes the space the boxes need.
@@ -156,17 +167,18 @@ handles = [plt.Line2D([], [], marker="s", ls="", ms=9, color=COLS[k], label=v)
            for k, v in (("world", "environment"), ("sense", "sensing"),
                         ("estimate", "estimation"), ("decide", "decision"),
                         ("act", "actuation"), ("product", "output"))]
-ax.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.015, -0.03),
-          ncol=6, frameon=False, fontsize=8.6)
+ax.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.015, -0.028),
+          ncol=6, frameon=False, fontsize=9.6)
 plt.tight_layout()
-plt.savefig(f"{FIG}/f0_architecture.png", bbox_inches="tight")
+plt.savefig(f"{FIG}/f0_architecture.png", bbox_inches="tight",
+            dpi=210)
 plt.close()
 
 # ======================================================================
 # Keep the same vertical scale as the architecture figure: the rounded box
 # geometry is expressed in axis units, so a squashed y-range would compress
 # the header band into the first line of text.
-fig, ax = plt.subplots(figsize=(11.0, 7.4))
+fig, ax = plt.subplots(figsize=(8.6, 5.79))
 ax.set_xlim(0, 1); ax.set_ylim(0, 1); ax.axis("off")
 
 stages = [
@@ -203,7 +215,8 @@ for i, (title, lines) in enumerate(stages):
 # Crop the axes to what is actually drawn in them.
 ax.set_ylim(ROW_Y[-1] - 0.035, ROW_Y[0] + H + 0.035)
 plt.tight_layout()
-plt.savefig(f"{FIG}/f0b_sonar_pipeline.png", bbox_inches="tight")
+plt.savefig(f"{FIG}/f0b_sonar_pipeline.png", bbox_inches="tight",
+            dpi=210)
 plt.close()
 
 print("wrote f0_architecture.png and f0b_sonar_pipeline.png")

@@ -419,7 +419,7 @@ def cutaway():
 
 
 def exploded():
-    assy, _, _, _, _ = V.build(explode=260.0)
+    assy, _, _, _, _ = V.build(explode=200.0)
     tris, norms, cols = tessellate(assy, 0.25, 0.10)
     fig = plt.figure(figsize=(14, 8), facecolor="white")
     ax = fig.add_subplot(111, projection="3d", facecolor="white")
