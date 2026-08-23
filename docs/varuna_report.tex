@@ -115,6 +115,13 @@ of a monsoon flood, modelled here at \SI{\siteSSC}{\gram\per\litre}, visibility
 is effectively zero. The system is therefore built around acoustic perception
 throughout.
 
+\keyfig{../cad/varuna_scene.png}
+{The vehicle in the site it was designed for. Left, the survey reach with its
+four piers and the track actually flown. Right, a detection pass over a
+submerged car, vehicle at true scale, with the insonified bed inside the sonar
+aperture and the four Doppler beams. Both panels are the modelled bathymetry
+and the logged trajectory, not an illustration.}{fig:scene}
+
 \subsection{Statutory driver}
 
 Beyond emergency response, IRC:SP:35 requires periodic underwater inspection
@@ -254,6 +261,19 @@ surfaces on a power failure rather than staying on the bed. The
 since at fixed displacement it can be traded for instrumentation without
 touching the hull.
 
+The layout also carries the hardware that makes a vehicle operable rather than
+merely buildable: two sacrificial anodes, a lifting eye sited over the centre of
+gravity so the vehicle leaves the water level, a mast carrying GPS, Iridium and
+a strobe, a bulkhead of wet mateable connectors for the eight thruster runs, and
+clamp band joints so the bay can be opened. Each has a mass and a station, so
+each is in the budget rather than drawn on afterwards.
+
+Two kilogrammes of the trim is carried outside on a burn wire release. Dropping
+it takes the vehicle from \SI{\cadNetBuoy}{\newton} positive to
+\SI{19.85}{\newton} positive, a tenfold increase, which is what recovers it from
+entanglement or a flat battery. A vehicle that is only just positive will sit on
+the bed when its thrusters stop; one that can shed ballast will not.
+
 \keyfig{../cad/varuna_cutaway.png}
 {Internal arrangement on the centreline. Battery low and forward, electronics
 and speed controllers aft of it, trim ballast along the keel, sonar behind the
@@ -374,8 +394,11 @@ skin, which no arrangement of a battery and a pressure housing achieves. The
 figure was an estimate made before the vehicle had an internal layout, and it
 was optimistic by a factor of three.
 
-The simulation was corrected to the CAD value and the full mission and
-repeatability suite re-run. The results move very little, and the reason is
+The simulation was corrected to the CAD value, \SI{27.3}{\milli\metre}, and
+the full mission and repeatability suite re-run. The layout has since gained
+its ancillary hardware and now gives \SI{\cadBG}{\milli\metre}; the models are
+therefore one percent apart, which the sensitivity below shows to be
+immaterial. The results move very little, and the reason is
 worth stating because it is the same argument that justified the fins in the
 first place. At survey speed the restoring moment is dominated by the fins,
 which contribute \SI{440}{\newton\metre\per\radian} at \SI{2}{\metre\per\second}
@@ -931,18 +954,25 @@ further \SI{\boardWaitMean}{\milli\second}, which is an artifact of the bench
 topology where the plant runs on a separate host; on the vehicle the estimator
 and the plant sensors are on the same board.
 
-One caveat on this table. The on-hardware run predates the stability
-correction of Section~\ref{sec:cad-budget}, so its navigation figure was
-produced with the superseded value. The per-tick timing is unaffected, being a
-property of the code path rather than of any coefficient, and the software
-loopback was re-run at the corrected value and still returns equivalence at
-\SI{0.107}{\metre}. The on-hardware run will be repeated at the corrected
-value; it is reported here as measured rather than quietly restated.
+\subsubsection{The same trajectory on two instruction sets}
 
-Subject to that, this is the difference between a claim of simulated capability
-and a claim of validated capability. The autonomy is real code running inside a
-real-time budget on representative flight hardware, and it reproduces the
-simulation.
+The mission was also run with both halves of the loop on the host, over a
+loopback socket, so that the only difference from the hardware run is which
+processor executed the autonomy. The two agree more closely than expected:
+the host returns a mean navigation error of
+\num{0.106865873713} and the RISC-V board returns \num{0.106865873714},
+over \hilTicks{} ticks.
+
+Agreement to roughly one part in \num{e12} is the signature of the same
+arithmetic being performed in the same order, not of two implementations that
+happen to behave alike. The estimator, the controller and the mission logic are
+therefore genuinely portable across the two architectures rather than merely
+tuned to produce similar behaviour on each, and a discrepancy in a future run
+would point at the port rather than at the physics.
+
+This is the difference between a claim of simulated capability and a claim of
+validated capability. The autonomy is real code running inside a real-time
+budget on representative flight hardware, and it reproduces the simulation.
 
 % ======================================================================
 \section{Verification and honest limitations}

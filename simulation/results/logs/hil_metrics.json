@@ -1,13 +1,13 @@
 {
- "hil_nav_mean": 0.13139827770340484,
- "hil_nav_max": 0.2557791663514018,
- "hil_ticks": 17896,
- "hil_sim_time": 894.7999999997339,
+ "hil_nav_mean": 0.10686587371415047,
+ "hil_nav_max": 0.2117704762812848,
+ "hil_ticks": 17884,
+ "hil_sim_time": 894.1999999997345,
  "hil_crc": 0,
- "board_compute_mean": 30.357433620920123,
- "board_compute_p99": 32.33740200032571,
- "board_wait_mean": 7.146869966475106,
+ "board_compute_mean": 30.378388089912768,
+ "board_compute_p99": 32.383575200041996,
+ "board_wait_mean": 6.872760657570661,
  "board_budget": 50.0,
- "board_margin": 1.5461971867590472,
+ "board_margin": 1.5439925854738596,
  "sim_nav_mean": 0.1507721185159242
 }
