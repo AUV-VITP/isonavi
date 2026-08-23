@@ -274,7 +274,7 @@ station, so the vehicle floats level.
 
 \begin{table}[htbp]\centering\small
 \caption{Mass budget by group. The solve closes on all three constraints
-simultaneously.}
+simultaneously.}\label{tab:mass}
 \begin{tabular}{lrr}
 \toprule
 \textbf{Group} & \textbf{Mass (kg)} & \textbf{Share} \\
@@ -321,6 +321,15 @@ the bed when its thrusters stop; one that can shed ballast will not.
 {Internal arrangement on the centreline. Battery low and forward, electronics
 and speed controllers aft of it, trim ballast along the keel, sonar behind the
 acoustic window.}{fig:cad-cut}
+
+\widthfig{../cad/varuna_exploded.png}
+{The same vehicle as a parts breakdown. Every line of the mass budget is a
+solid in the model, \cadParts{} parts in all: the eight thruster pods with their
+ducts and pylons, the ring frames, the nose dome, the fins, the acoustic
+window, the internal stack and the trim ballast. The budget in Table~\ref{tab:mass}
+is therefore a property of the geometry rather than a list kept alongside it,
+which is what allows the hull size, the ballast mass and the ballast station to
+be solved rather than chosen.}{fig:cad-exp}{0.94}
 
 \subsubsection{The hull has to survive the depth}
 
