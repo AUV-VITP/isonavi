@@ -42,11 +42,18 @@ INTERNAL = ("battery", "electronics", "esc bank", "sonar head", "trim ballast",
 
 
 # ------------------------------------------------------------------ meshing
-def tessellate(assy, tol=0.35, skip=()):
-    """Flatten an assembly to (triangles, per-triangle rgb)."""
-    tris, cols = [], []
+def tessellate(assy, tol=0.12, ang=0.05, skip=()):
+    """Flatten an assembly to (triangles, shading normals, per-triangle rgb).
+
+    Shading normals are smooth vertex normals, not facet normals: facet
+    normals make every band of a revolved surface a separate tone, which is
+    what produces the striping on a hull. Facet normals are accumulated at
+    shared vertices, and each triangle is shaded by the mean of its three
+    vertex normals.
+    """
+    tris, norms, cols = [], [], []
     for child in assy.children:
-        if any(child.name.startswith(s) for s in skip):
+        if any(child.name.startswith(sk) for sk in skip):
             continue
         shape = child.obj
         if isinstance(shape, cq.Workplane):
@@ -54,43 +61,77 @@ def tessellate(assy, tol=0.35, skip=()):
         if shape is None:
             continue
         try:
-            verts, faces = shape.tessellate(tol)
+            verts, faces = shape.tessellate(tol, ang)
         except Exception:
             continue
         v = np.array([[p.x, p.y, p.z] for p in verts], float)
         f = np.array(faces, int)
         if len(f) == 0:
             continue
+
+        fn = np.cross(v[f[:, 1]] - v[f[:, 0]], v[f[:, 2]] - v[f[:, 0]])
+        fn /= np.maximum(np.linalg.norm(fn, axis=1, keepdims=True), 1e-12)
+        # Tessellation winding is not guaranteed consistent between faces, so
+        # orient every facet away from the part centroid before averaging;
+        # otherwise opposed normals cancel and the surface goes black.
+        ctr = v.mean(axis=0)
+        out = v[f].mean(axis=1) - ctr
+        flip = np.sign(np.einsum("ij,ij->i", fn, out))
+        flip[flip == 0] = 1.0
+        fn *= flip[:, None]
+
+        vn = np.zeros_like(v)
+        for k in range(3):
+            np.add.at(vn, f[:, k], fn)
+        vn /= np.maximum(np.linalg.norm(vn, axis=1, keepdims=True), 1e-12)
+        sn = vn[f].mean(axis=1)
+        sn /= np.maximum(np.linalg.norm(sn, axis=1, keepdims=True), 1e-12)
+
         rgb = child.color.toTuple()[:3] if child.color else (0.75, 0.75, 0.78)
         tris.append(v[f])
+        norms.append(sn)
         cols.append(np.tile(np.array(rgb, float), (len(f), 1)))
-    return np.concatenate(tris), np.concatenate(cols)
+    return (np.concatenate(tris), np.concatenate(norms),
+            np.concatenate(cols))
 
 
-def shade(tris, base, elev, azim, ambient=0.42):
-    v0, v1, v2 = tris[:, 0], tris[:, 1], tris[:, 2]
-    n = np.cross(v1 - v0, v2 - v0)
-    n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-9)
-    le, la = np.radians(elev + 26), np.radians(azim + 38)
-    light = np.array([np.cos(le) * np.cos(la), np.cos(le) * np.sin(la),
-                      np.sin(le)])
-    lam = np.clip(np.abs(n @ light), 0, 1)
-    return np.clip(base * (ambient + (1 - ambient) * lam)[:, None], 0, 1)
+def shade(n, base, elev, azim, ambient=0.30):
+    """Blinn-Phong over smooth vertex normals.
+
+    Ambient comes from above so undersides fall away, and a specular lobe
+    gives the shell the gloss of painted composite rather than matte card.
+    """
+    le, la = np.radians(elev), np.radians(azim)
+    view = np.array([np.cos(le) * np.cos(la), np.cos(le) * np.sin(la),
+                     np.sin(le)])
+
+    def dirv(d_el, d_az):
+        a, b = np.radians(elev + d_el), np.radians(azim + d_az)
+        return np.array([np.cos(a) * np.cos(b), np.cos(a) * np.sin(b),
+                         np.sin(a)])
+
+    key, fill = dirv(30, 38), dirv(-8, -75)
+    amb = ambient * (0.62 + 0.38 * np.clip(n[:, 2], -1, 1))
+    dif = 0.72 * np.clip(n @ key, 0, 1) + 0.26 * np.clip(n @ fill, 0, 1)
+    half = key + view
+    half /= np.linalg.norm(half)
+    spec = 0.34 * np.clip(n @ half, 0, 1) ** 42
+    return np.clip(base * (amb + dif)[:, None] + spec[:, None], 0, 1)
 
 
-def depth_sort(tris, cols, elev, azim):
+def depth_sort(tris, norms, cols, elev, azim):
     """Order triangles far to near, so nearer ones paint over."""
     le, la = np.radians(elev), np.radians(azim)
     d = np.array([np.cos(le) * np.cos(la), np.cos(le) * np.sin(la),
                   np.sin(le)])
     order = np.argsort(tris.mean(axis=1) @ d)
-    return tris[order], cols[order]
+    return tris[order], norms[order], cols[order]
 
 
-def draw(ax, tris, cols, elev, azim, zoom=0.92):
-    tris, cols = depth_sort(tris, cols, elev, azim)
+def draw(ax, tris, norms, cols, elev, azim, zoom=0.92):
+    tris, norms, cols = depth_sort(tris, norms, cols, elev, azim)
     ax.add_collection3d(Poly3DCollection(
-        tris, facecolors=shade(tris, cols, elev, azim),
+        tris, facecolors=shade(norms, cols, elev, azim),
         edgecolors="none", linewidths=0))
     allv = tris.reshape(-1, 3)
     ctr = allv.mean(0)
@@ -110,10 +151,10 @@ def frac(ax, p3):
 
 
 # ------------------------------------------------------------------ figures
-def hero(tris, cols, info):
+def hero(tris, norms, cols, info):
     fig = plt.figure(figsize=(13.5, 7.6), facecolor="white")
     ax = fig.add_subplot(111, projection="3d", facecolor="white")
-    draw(ax, tris, cols, 19, -57, zoom=0.86)
+    draw(ax, tris, norms, cols, 19, -57, zoom=0.86)
     ax.text2D(0.015, 0.95, "VARUNA-1", transform=ax.transAxes, fontsize=25,
               fontweight="bold", color=BLUE)
     ax.text2D(0.015, 0.885,
@@ -128,13 +169,13 @@ def hero(tris, cols, info):
     print("wrote varuna_hero.png")
 
 
-def general_arrangement(tris, cols, info):
+def general_arrangement(tris, norms, cols, info):
     views = [("side elevation", 0, -90), ("plan", 89.9, -90),
              ("three quarter", 20, -58), ("head on", 0, 0)]
     fig = plt.figure(figsize=(15, 9.2), facecolor="white")
     for k, (name, el, az) in enumerate(views):
         ax = fig.add_subplot(2, 2, k + 1, projection="3d", facecolor="white")
-        draw(ax, tris, cols, el, az)
+        draw(ax, tris, norms, cols, el, az)
         ax.set_title(name, color=INK, fontsize=12, pad=-2)
     fig.suptitle("VARUNA-1 general arrangement", fontsize=17, color=BLUE,
                  fontweight="bold", y=0.975)
@@ -155,7 +196,7 @@ LIGHT = np.array([0.36, 0.52, 0.78])
 LIGHT /= np.linalg.norm(LIGHT)
 
 
-def ortho(ax, tris, cols, screen, view, ambient=0.45):
+def ortho(ax, tris, norms, cols, screen, view, ambient=0.45):
     """Draw a true orthographic projection onto a normal 2D axes.
 
     Engineering views want an exact parallel projection and a real aspect
@@ -164,12 +205,10 @@ def ortho(ax, tris, cols, screen, view, ambient=0.45):
     is projected directly instead.
     """
     order = np.argsort(tris.mean(axis=1) @ np.array(view, float))
-    t, c = tris[order], cols[order]
-    v0, v1, v2 = t[:, 0], t[:, 1], t[:, 2]
-    n = np.cross(v1 - v0, v2 - v0)
-    n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-9)
-    lam = np.clip(np.abs(n @ LIGHT), 0, 1)
-    fc = np.clip(c * (ambient + (1 - ambient) * lam)[:, None], 0, 1)
+    t, n, c = tris[order], norms[order], cols[order]
+    lam = np.clip(n @ LIGHT, 0, 1)
+    amb = ambient * (0.66 + 0.34 * np.clip(n[:, 2], -1, 1))
+    fc = np.clip(c * (amb + (1 - ambient) * lam)[:, None], 0, 1)
     polys = t[:, :, screen]
     ax.add_collection(PolyCollection(polys, facecolors=fc, edgecolors="none"))
     lo = polys.reshape(-1, 2).min(axis=0)
@@ -230,7 +269,7 @@ def title_block(ax, info):
         y -= 0.082
 
 
-def dimensioned(tris, cols, info, geom):
+def dimensioned(tris, norms, cols, info, geom):
     """Side elevation and plan, orthographic, with principal dimensions."""
     x_c = L.NOSE_L + geom["l_mid"] / 2
     nose, tail = x_c * MM, (x_c - geom["length"]) * MM
@@ -242,7 +281,7 @@ def dimensioned(tris, cols, info, geom):
                           height_ratios=[1, 1], hspace=0.06, wspace=0.04)
 
     ax = fig.add_subplot(gs[0, 0])
-    ortho(ax, tris, cols, screen=[0, 2], view=(0, 1, 0))
+    ortho(ax, tris, norms, cols, screen=[0, 2], view=(0, 1, 0))
     dim2(ax, (tail, -r), (nose, -r), f"{info['hull_length_mm']:.0f}", -150)
     dim2(ax, (tail + 12, -r), (tail + 12, r),
          f"{info['hull_diameter_mm']:.0f}", -95, vertical=True)
@@ -252,7 +291,7 @@ def dimensioned(tris, cols, info, geom):
     ax.set_title("side elevation", color=INK, fontsize=12, loc="left")
 
     ax = fig.add_subplot(gs[1, 0])
-    ortho(ax, tris, cols, screen=[0, 1], view=(0, 0, 1))
+    ortho(ax, tris, norms, cols, screen=[0, 1], view=(0, 0, 1))
     dim2(ax, (0, -L.ARM_LY * MM), (0, L.ARM_LY * MM),
          f"{2 * L.ARM_LY * MM:.0f} across thrusters", 470, vertical=True)
     dim2(ax, (tail, L.ARM_LY * MM), (nose, L.ARM_LY * MM),
@@ -295,10 +334,10 @@ CALLOUTS = [
 def cutaway():
     """Labelled section. Leaders run to two columns so nothing overlaps."""
     assy, _, _, _, _ = V.build(cutaway=True)
-    tris, cols = tessellate(assy, 0.3)
+    tris, norms, cols = tessellate(assy)
     fig = plt.figure(figsize=(15.0, 8.8), facecolor="white")
     ax = fig.add_subplot(111, projection="3d", facecolor="white")
-    draw(ax, tris, cols, 16, -74, zoom=0.70)
+    draw(ax, tris, norms, cols, 16, -74, zoom=0.70)
     fig.canvas.draw()
 
     pts = [(lab, frac(ax, (p[0] * MM, p[1] * MM, p[2] * MM)))
@@ -338,10 +377,10 @@ def cutaway():
 
 def exploded():
     assy, _, _, _, _ = V.build(explode=260.0)
-    tris, cols = tessellate(assy, 0.4)
+    tris, norms, cols = tessellate(assy, 0.25, 0.10)
     fig = plt.figure(figsize=(14, 8), facecolor="white")
     ax = fig.add_subplot(111, projection="3d", facecolor="white")
-    draw(ax, tris, cols, 22, -60, zoom=0.95)
+    draw(ax, tris, norms, cols, 22, -60, zoom=0.95)
     ax.text2D(0.015, 0.95, "Exploded view", transform=ax.transAxes,
               fontsize=18, fontweight="bold", color=BLUE)
     plt.savefig(f"{OUT}/varuna_exploded.png", dpi=150, facecolor="white",
@@ -353,10 +392,10 @@ def exploded():
 if __name__ == "__main__":
     info = json.load(open(f"{OUT}/varuna_cad_params.json"))
     assy, _, geom, _, _ = V.build()
-    tris, cols = tessellate(assy, 0.3, skip=INTERNAL)
+    tris, norms, cols = tessellate(assy, skip=INTERNAL)
     print(f"tessellated {len(tris)} triangles from {len(assy.children)} parts")
-    hero(tris, cols, info)
-    general_arrangement(tris, cols, info)
-    dimensioned(tris, cols, info, geom)
+    hero(tris, norms, cols, info)
+    general_arrangement(tris, norms, cols, info)
+    dimensioned(tris, norms, cols, info, geom)
     cutaway()
     exploded()

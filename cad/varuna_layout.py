@@ -171,6 +171,8 @@ class Part:
 ARM_LX, ARM_LY, ARM_VX, ARM_VY = 0.42, 0.30, 0.38, 0.26
 THR_POD_V = 0.00040       # sealed volume of one thruster pod, m3
 BALLAST_Z = -0.062        # on the keel line inside the hull, clear of the skin
+DROP_WEIGHT = 2.00        # kg, the releasable part of the trim, carried outside
+RHO_ZINC = 7140.0
 
 
 def external_parts():
@@ -192,6 +194,32 @@ def external_parts():
            0.00080, "sensors"))
     a(Part("depth transducer", 0.05, (-0.150, 0, -HULL_R - 0.006), 0.00004,
            "sensors"))
+
+    # -- corrosion protection. Aluminium and stainless in seawater is a
+    # galvanic pair, so zinc is fitted to be eaten first. Two, so that one
+    # damaged anode does not leave a section unprotected.
+    for sx in (+1, -1):
+        a(Part(f"sacrificial anode {sx:+d}", 0.15,
+               (sx * 0.210, 0, -HULL_R - 0.004), 0.15 / RHO_ZINC,
+               "structure"))
+
+    # -- recovery. The lifting eye sits over the centre of gravity so the
+    # vehicle comes out of the water level rather than swinging.
+    a(Part("lifting eye", 0.16, (-0.035, 0, HULL_R + 0.010), 0.00003,
+           "structure"))
+
+    # -- surface location. A vehicle that has surfaced in a flooded river is
+    # useless if it cannot be found, so the mast carries GPS, an Iridium
+    # transceiver and a strobe.
+    a(Part("antenna and strobe mast", 0.28, (-0.255, 0, HULL_R + 0.075),
+           0.00012, "avionics"))
+
+    # -- emergency ascent. Part of the trim ballast is carried as a burn wire
+    # release on the belly. Dropping it converts the vehicle from very
+    # slightly positive to strongly positive, which is what recovers it from
+    # entanglement or a flat battery.
+    a(Part("drop weight, releasable", DROP_WEIGHT,
+           (0.010, 0, -HULL_R - 0.014), DROP_WEIGHT / RHO_LEAD, "trim"))
     return p
 
 
@@ -307,6 +335,14 @@ if __name__ == "__main__":
           f"z {b['cb'][2] * 1000:7.1f} mm")
     print(f"  longitudinal trim     {b['trim_x_offset'] * 1000:9.3f} mm  "
           f"(zero is level)")
+    print()
+    net_dropped = (b["buoyancy_N"] - DROP_WEIGHT * RHO_LEAD
+                   / RHO_LEAD * G * 0 - (b["mass_kg"] - DROP_WEIGHT) * G
+                   - DROP_WEIGHT / RHO_LEAD * RHO_WATER * G)
+    print(f"  emergency ascent")
+    print(f"    drop weight         {DROP_WEIGHT:9.2f} kg releasable")
+    print(f"    net buoyancy after  {net_dropped:9.2f} N   "
+          f"(from {b['net_buoyancy_N']:.2f} N)")
     print()
     print(f"  BG separation         {b['bg_z'] * 1000:9.1f} mm")
     print(f"  simulation assumed    {85.0:9.1f} mm")

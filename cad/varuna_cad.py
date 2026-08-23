@@ -75,7 +75,7 @@ def lens_strut(length, width, thick, taper=0.75):
 
 
 # ------------------------------------------------------------------ hull
-def hull_profile(geom, n=72):
+def hull_profile(geom, n=150):
     """Body-frame (x, r) points from tail tip to nose tip, in millimetres.
 
     The layout builds the Myring profile from the nose, but the body frame has
@@ -102,11 +102,10 @@ def hull_profile(geom, n=72):
 
 
 def _revolve_profile(pts):
-    """Revolve an (x, r) meridian about the X axis.
+    """Revolve an (x, r) meridian given as explicit points.
 
-    The profile is closed back along the axis, skipping any endpoint that
-    already sits on it: the Myring nose comes to a point, so a closing line
-    there would be zero length and the kernel rejects it.
+    Retained for the acoustic window, which is taken as a station range of the
+    same profile.
     """
     wp = cq.Workplane("XZ").polyline(pts)
     if pts[-1][1] > 1e-6:
@@ -121,14 +120,10 @@ def hull_solid(geom):
 
 
 def hull_inner(geom, t):
-    """The internal cavity, built by drawing the meridian in by the skin
-    thickness.
+    """The internal cavity, the meridian inset by the skin thickness.
 
-    Offsetting the profile is used in preference to a shell operation on the
-    solid: shelling a revolved body with a pointed nose is fragile in the
-    kernel, whereas an inset meridian is exact and always closes. Stations
-    where the inset radius would vanish are dropped, which leaves the nose and
-    tail tips solid, as they are in the real structure.
+    Stations where the inset radius would vanish are dropped, which leaves the
+    nose and tail tips solid, as they are in the real structure.
     """
     pts = [(x, r - t) for x, r in hull_profile(geom) if r - t > 1.0]
     if len(pts) < 3:
@@ -255,6 +250,80 @@ def ballast_blocks(mass_kg, x_mm, z_mm):
     return out
 
 
+
+# ------------------------------------------------------------- ancillaries
+def anode(length=76.0, width=34.0, height=13.0):
+    """A sacrificial zinc block, radiused so it does not catch a line."""
+    return (cq.Workplane("XY").box(length, width, height)
+            .edges("|Z").fillet(8.0).edges(">Z or <Z").fillet(3.0))
+
+
+def lifting_eye(boss_r=17.0, ring_r=15.0, wire=5.0):
+    """A padeye on a boss. Sited over the centre of gravity so the vehicle
+    leaves the water level instead of swinging on the hook."""
+    boss = cq.Workplane("XY").circle(boss_r).extrude(11).edges(">Z").fillet(3)
+    ring = (cq.Workplane("YZ").workplane(offset=-wire / 2)
+            .circle(ring_r).circle(ring_r - wire).extrude(wire)
+            .translate((0, 0, 11 + ring_r * 0.75)))
+    return boss.union(ring)
+
+
+def mast(height=145.0, chord=58.0, thick=16.0):
+    """Antenna and strobe mast: a faired blade carrying GPS, Iridium and a
+    light, so a surfaced vehicle can be located in a flooded river."""
+    blade = lens_strut(height, chord, thick, taper=0.62)
+    dome = (cq.Workplane("XY", origin=(0, 0, height))
+            .circle(chord * 0.30).extrude(11).edges(">Z").fillet(5.0))
+    return blade.union(dome)
+
+
+def drop_weight(length=150.0, width=96.0, height=17.0):
+    """Releasable ballast on the belly, held by a burn wire. Kept flat so it
+    does not become the snag hazard a keel bulb would be."""
+    plate = (cq.Workplane("XY").box(length, width, height)
+             .edges("|Z").fillet(14.0).edges("<Z").fillet(5.0))
+    for sx in (-1, 1):
+        plate = plate.union(
+            cq.Workplane("XY", origin=(sx * length * 0.30, 0, height / 2))
+            .circle(7.0).extrude(9))
+    return plate
+
+
+def clamp_band(radius, width=15.0, proud=4.5):
+    """A joint band. The hull separates here for access to the bay."""
+    return (cq.Workplane("YZ").circle(radius + proud).circle(radius - 1.0)
+            .extrude(width, both=True).edges("%CIRCLE").fillet(1.6))
+
+
+def penetrator_plate(radius=70.0):
+    """The bulkhead the wiring crosses. Eight thruster runs plus the sensor
+    harness, on wet mateable connectors so the bay can be opened without
+    unmaking the loom."""
+    plate = (cq.Workplane("YZ").circle(radius).extrude(15)
+             .edges("%CIRCLE").fillet(2.0))
+    for k in range(8):
+        ang = math.radians(k * 45 + 22.5)
+        y, z = radius * 0.62 * math.cos(ang), radius * 0.62 * math.sin(ang)
+        plate = plate.union(
+            cq.Workplane("YZ", origin=(0, y, z)).workplane(offset=15)
+            .circle(9.0).extrude(13).edges(">X").fillet(2.0))
+    plate = plate.union(
+        cq.Workplane("YZ").workplane(offset=15).circle(13.0).extrude(16)
+        .edges(">X").fillet(3.0))
+    return plate
+
+
+def thruster_collar(duct_d, width=17.0):
+    """The band that clamps a duct to its pylon."""
+    r = duct_d / 2 * MM
+    return (cq.Workplane("YZ").circle(r + 5.5).circle(r - 0.5)
+            .extrude(width, both=True).edges("%CIRCLE").fillet(1.4))
+
+
+def vent_port(r=9.0):
+    """Fill and vent fitting for wet testing the bay."""
+    return cq.Workplane("XY").circle(r).extrude(6).edges(">Z").fillet(2.0)
+
 # ------------------------------------------------------------------ assembly
 def build(cutaway=False, explode=0.0):
     parts, geom, v_hull = L.solve_layout()
@@ -320,8 +389,10 @@ def build(cutaway=False, explode=0.0):
             .box(620, 16, 10), f"rail {sy}", C_METAL)
 
     p = pos["aft closure and penetrator plate"]
-    add(cq.Workplane("YZ", origin=(p[0] * MM, 0, 0)).circle(72).extrude(14),
+    add(penetrator_plate().translate((p[0] * MM, 0, 0)),
         "aft closure", C_METAL, (-1, 0, 0))
+
+    x_c = L.NOSE_L + geom["l_mid"] / 2
 
     # -- external: thrusters on swept pylons rooted on the cylindrical body
     x_mid_fwd = (L.NOSE_L + geom["l_mid"] / 2) - L.NOSE_L      # body x of nose end
@@ -338,6 +409,9 @@ def build(cutaway=False, explode=0.0):
                     (-1, 1): 135, (-1, -1): -135}[(sx, sy)]
             add(thruster().rotate((0, 0, 0), (0, 0, 1), cant).translate(tip),
                 f"thruster h {sx}{sy}", C_DARK, (sx * 0.4, sy, 0))
+            add(thruster_collar(0.100).rotate((0, 0, 0), (0, 0, 1), cant)
+                .translate(tip), f"collar h {sx}{sy}", C_METAL,
+                (sx * 0.4, sy, 0))
 
     z_v = (L.HULL_R + 0.055) * MM
     for sx in (+1, -1):
@@ -352,9 +426,10 @@ def build(cutaway=False, explode=0.0):
             add(thruster(0.092, 0.080)
                 .rotate((0, 0, 0), (0, 1, 0), 90).translate(tip),
                 f"thruster v {sx}{sy}", C_DARK, (0, sy, 1))
+            add(thruster_collar(0.092).rotate((0, 0, 0), (0, 1, 0), 90)
+                .translate(tip), f"collar v {sx}{sy}", C_METAL, (0, sy, 1))
 
     # -- cruciform stabilisers on the tail cone
-    x_c = L.NOSE_L + geom["l_mid"] / 2
     le_x, root_c = -0.320, 0.155
 
     def hull_r_at(bx):
@@ -368,6 +443,36 @@ def build(cutaway=False, explode=0.0):
         f = fin(le_x * MM, root_c * MM, 72, 104, 54, r_le, r_te)
         add(f.rotate((0, 0, 0), (1, 0, 0), ang), f"fin {ang}", C_ACCENT,
             (0, 0, 0))
+
+    # -- ancillary hardware, everything the vehicle needs to be operated
+    C_ZINC = cq.Color(0.72, 0.74, 0.77, 1.0)
+    for sx in (+1, -1):
+        p = pos[f"sacrificial anode {sx:+d}"]
+        add(anode().translate((p[0] * MM, 0, p[2] * MM)),
+            f"anode {sx}", C_ZINC, (0, 0, -1))
+
+    p = pos["lifting eye"]
+    add(lifting_eye().translate((p[0] * MM, 0, L.HULL_R * MM - 2)),
+        "lifting eye", C_METAL, (0, 0, 1))
+
+    p = pos["antenna and strobe mast"]
+    add(mast().translate((p[0] * MM, 0, L.HULL_R * MM - 4)),
+        "antenna mast", C_ACCENT, (0, 0, 1))
+
+    p = pos["drop weight, releasable"]
+    add(drop_weight().translate((p[0] * MM, 0, p[2] * MM)),
+        "drop weight", C_LEAD, (0, 0, -1))
+
+    # Hull separation joints, at the nose and tail bulkheads.
+    x_nose_j = (x_c - L.NOSE_L) * MM
+    x_tail_j = (x_c - geom["x_mid_end"]) * MM
+    add(clamp_band(L.HULL_R * MM).translate((x_nose_j, 0, 0)),
+        "clamp band forward", C_METAL)
+    add(clamp_band(L.HULL_R * MM).translate((x_tail_j, 0, 0)),
+        "clamp band aft", C_METAL)
+
+    add(vent_port().translate((0.150 * MM, 0, L.HULL_R * MM - 2)),
+        "vent port", C_METAL, (0, 0, 1))
 
     # -- belly acoustics
     p = pos["doppler velocity log"]
