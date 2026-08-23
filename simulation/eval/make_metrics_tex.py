@@ -234,6 +234,35 @@ _HY = (("hydroCf", "cf", "{:.5f}"),
 for _n, _k, _f in _HY:
     cmd(_n, hydro.get(_k) if hydro else None, _f)
 
+# ---------------------------------------------------------------- bill of materials
+_bmp = os.path.join(os.path.dirname(ROOT), "cad", "varuna_bom.json")
+bom = json.load(open(_bmp)) if os.path.exists(_bmp) else None
+_BM = (("bomTotal", "total_usd", "{:,.0f}"),
+       ("bomLakh", "total_lakh_inr", "{:.1f}"),
+       ("bomAcoustics", "acoustics_usd", "{:,.0f}"),
+       ("bomAcousticsPct", "acoustics_pct", "{:.0f}"),
+       ("bomRest", "non_acoustics_usd", "{:.0f}"),
+       ("bomRate", "usd_inr", "{:.0f}"))
+for _n, _k, _f in _BM:
+    cmd(_n, bom.get(_k) if bom else None, _f)
+
+# ---------------------------------------------------------------- energy
+_enp = os.path.join(os.path.dirname(ROOT), "cad", "varuna_energy.json")
+energy = json.load(open(_enp)) if os.path.exists(_enp) else None
+_EN = (("enBattery", "battery_wh", "{:.0f}"),
+       ("enHotel", "hotel_w", "{:.0f}"),
+       ("enMissionWh", "mission_wh", "{:.0f}"),
+       ("enMissionPct", "mission_pct", "{:.0f}"),
+       ("enMissions", "missions_per_charge", "{:.1f}"),
+       ("enPropMean", "p_prop_mean", "{:.0f}"),
+       ("enPropPeak", "p_prop_peak", "{:.0f}"),
+       ("enTotalMean", "p_total_mean", "{:.0f}"),
+       ("enHoursSite", "hours_at_site_current", "{:.1f}"),
+       ("enHoursCalm", "hours_calm", "{:.1f}"),
+       ("enEta", "eta", "{:.2f}"))
+for _n, _k, _f in _EN:
+    cmd(_n, energy.get(_k) if energy else None, _f)
+
 # ---------------------------------------------------------------- detection quality
 _rep = load("repeatability.json", {}) or {}
 cmd("detContacts", _rep.get("contacts_per_run"), "{:.1f}")

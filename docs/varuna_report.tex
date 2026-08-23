@@ -892,6 +892,40 @@ All primary targets found & \repAllTargets{}/\repRuns{} \\
 {Per-seed results with the mean marked. The spread, not the best run, is the
 honest statement of what the system does.}{fig:repeat}
 
+\subsection{Endurance, which the current sets}
+
+A hovering vehicle answers the endurance question worst, because holding
+station in a current costs full thrust while doing no useful work at all. It is
+therefore worth computing rather than quoting a transit figure.
+
+Propeller power is taken from momentum theory, $P = T^{3/2}/\sqrt{2\rho A}$,
+divided by a drive efficiency of \enEta{} covering motor, controller and
+propeller. That relation is superlinear in thrust, so the fleet total cannot be
+recovered from the peak thruster; the mission log records all eight forces and
+the integral runs over them.
+
+\keyfig{../cad/varuna_energy.png}
+{Left: endurance holding station, against the current being fought. Right: the
+electrical draw of the reference mission, integrated from the logged thruster
+forces. The low sections are downstream legs, the high ones are upstream legs
+and station keeping.}{fig:energy}
+
+The reference mission drew \SI{\enMissionWh}{\watt\hour}, which is
+\SI{\enMissionPct}{\percent} of a usable charge, so the vehicle carries
+\enMissions{} such missions between charges. Mean draw was
+\SI{\enTotalMean}{\watt} against a hotel load of only
+\SI{\enHotel}{\watt}: propulsion is essentially the entire energy budget.
+
+The endurance curve is the honest part. In slack water the same battery lasts
+\SI{\enHoursCalm}{\hour}. Holding against the design current of
+\SI{\siteCurrent}{\metre\per\second} it lasts \SI{\enHoursSite}{\hour}. That is
+a factor of eighteen across the operating range, and it is a direct consequence
+of the hover authority that makes the vehicle useful here at all.
+
+Two things follow for operations. Endurance must be quoted against a current,
+never as a single number, and the mission plan has to work the flow rather than
+ignore it, which is why survey legs run along the flow axis and not across it.
+
 % ======================================================================
 \section{Hardware in the loop}\label{sec:hil}
 
@@ -1029,6 +1063,92 @@ hydrodynamic coefficients around it remain estimates. The
 \SI{\cadBG}{\milli\metre} separation replaced an assumed
 \SI{\cadBGAssumed}{\milli\metre} that the layout showed to be unreachable.
 \end{itemize}
+
+% ======================================================================
+\section{What it costs, and where it sits}
+
+\subsection{Bill of materials}
+
+One airframe, prototype quantity. This is materials and bought-in equipment
+only. It excludes design labour, integration, test, tooling and qualification,
+which for a first article normally exceed the parts, so it is not a unit price
+and is not offered as one.
+
+\begin{table}[htbp]\centering\small
+\caption{Bill of materials by subsystem, one airframe. The doppler log is a
+published price; the imaging sonar is quotation only and is an estimate
+carrying real uncertainty.}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Subsystem} & \textbf{USD} & \textbf{Share} \\
+\midrule
+Acoustics, sonar and doppler log & \num{23710} & 72 \% \\
+Structure, hull and fittings & \num{5250} & 16 \% \\
+Propulsion, eight thrusters and drives & \num{1880} & 6 \% \\
+Avionics, computing and inertial & \num{1135} & 4 \% \\
+Power & \num{850} & 3 \% \\
+\midrule
+Total & \bomTotal{} & \\
+\multicolumn{3}{l}{\SI{\bomLakh}{} lakh INR at \bomRate{} per USD} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The distribution is the interesting part. The two acoustic instruments are
+\SI{\bomAcousticsPct}{\percent} of the bill. The hull, the propulsion, the
+power system and the entire autonomy stack together come to
+\SI{\bomRest}{} USD.
+
+That has a direct consequence for where effort is worth spending. The work in
+this report, the estimation, the control, the mission logic and the geometric
+detector, runs on a computer that costs a few hundred dollars, and it is the
+part that is genuinely ours. The cost sits in two imported instruments. If this
+programme is to reduce cost further, the lever is the sonar, not the vehicle,
+and that is a separate and much larger undertaking than the one proposed here.
+
+\subsection{Where this vehicle sits}
+
+\begin{table}[htbp]\centering\small
+\caption{Comparable compact survey vehicles. The price column mixes order price
+against a parts bill and is a scale reference, not a like for like comparison.}
+\begin{tabular}{lccc}
+\toprule
+& \textbf{REMUS 100} & \textbf{Iver3} & \textbf{VARUNA-1} \\
+\midrule
+Length & \SI{1.6}{\metre} & \SI{2.1}{\metre} &
+\SI{\cadLength}{\milli\metre} \\
+Diameter & \SI{0.19}{\metre} & \SI{0.14}{\metre} &
+\SI{\cadDia}{\milli\metre} \\
+Mass & under \SI{45}{\kilo\gram} & about \SI{30}{\kilo\gram} &
+\SI{\cadMass}{\kilo\gram} \\
+Depth rating & \SI{100}{\metre} & \SI{100}{\metre} &
+\SI{\structDepth}{\metre} \\
+Propulsion & prop and fins & prop and fins & eight vectored \\
+Hover and station keep & no & no & to
+\SI{\hydroEnvCad}{\metre\per\second} \\
+Designed for & open water survey & open water survey & flood debris \\
+Cost & order \num{300000} & order \num{150000} & parts \bomTotal{} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Both comparators are mature, capable vehicles and neither is being criticised.
+They are transit survey torpedoes: a single propeller with control fins, which
+requires forward speed for control authority and provides no lateral or
+vertical thrust. That is the right design for running long survey lines in
+open water, and it is why they are faster, deeper rated and longer legged than
+this vehicle.
+
+It is also why neither can do the job described in Section~\ref{sec:results}.
+Holding station over a scoured pier in a \SI{\siteCurrent}{\metre\per\second}
+current, and orbiting it to measure the hole, requires the vehicle to generate
+force in every direction at zero forward speed. VARUNA-1 gives up depth,
+endurance and half its drag budget to buy that, which is a poor trade for a
+survey vehicle and the only workable one for a disaster vehicle.
+
+The claim is therefore not that this is a better AUV. It is that it is a
+different one, aimed at a mission the available platforms are not built to
+attempt.
 
 % ======================================================================
 \section{Development pathway}

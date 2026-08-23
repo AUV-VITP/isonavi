@@ -117,7 +117,8 @@ class MissionRunner:
         self.current_pier = None
         self.log = {k: [] for k in
                     ("t", "phase", "eta", "nu", "est_pos", "est_att", "sigma",
-                     "alt", "dvl_lock", "current", "target_pos", "thrust")}
+                     "alt", "dvl_lock", "current", "target_pos", "thrust",
+                     "thrust_vec")}
         self.frames = []
         self.events = []
         self.scour_results = {}
@@ -316,6 +317,10 @@ class MissionRunner:
         L["current"].append(self.cest.speed)
         L["target_pos"].append(tgt.copy())
         L["thrust"].append(float(np.max(np.abs(dyn.thrust))))
+        # Per thruster force, needed for an energy budget: propeller
+        # power goes as the three halves power of thrust, so the fleet
+        # total cannot be recovered from the peak alone.
+        L["thrust_vec"].append(np.asarray(dyn.thrust, float).copy())
         self.t += dt
 
     def run(self, verbose=True):

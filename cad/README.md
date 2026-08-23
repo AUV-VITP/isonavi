@@ -93,6 +93,21 @@ Re-checking the station keeping envelope at the higher drag drops it from
 2.93 to 2.69 m/s against a 2.4 m/s site current, so the margin is 1.12 rather
 than 1.22. The design holds on a thinner margin than the simulation implies.
 
+## Endurance and cost
+
+ integrates propeller power over the eight thruster forces the
+mission actually logged, using momentum theory. The reference mission draws
+295 Wh, a quarter of a usable charge, so the vehicle carries about four such
+missions between charges. Endurance holding station runs from 21.8 h in slack
+water to 1.2 h against the 2.4 m/s design current, a factor of eighteen. That
+spread is the price of hover authority and has to be quoted against a current,
+never as a single number.
+
+ prices one airframe at 32,825 USD, about 27.6 lakh INR, parts only.
+The two acoustic instruments are 72 percent of it; the hull, propulsion, power
+and the whole autonomy stack together are 9,115 USD. The cheap part is the part
+that is ours.
+
 ## Files
 
 | file | what it is |
@@ -103,6 +118,9 @@ than 1.22. The design holds on a thinner margin than the simulation implies.
 | `verify_cad.py` | cross checks the layout against the geometry kernel |
 | `structures.py` | pressure hull and pylon sizing |
 | `hydrodynamics.py` | drag and added mass derived from the geometry |
+| `energy.py` | power and endurance, integrated over the flight log |
+| `bom.py` | bill of materials |
+| `scene_render.py` | the vehicle placed in the modelled site |
 | `varuna_vehicle.step` | parametric assembly for CAD |
 | `varuna_cad_params.json` | derived dimensions and the verification numbers |
 
@@ -117,6 +135,9 @@ python render_views.py     # hero, GA, dimensioned drawing, cutaway, exploded
 python verify_cad.py       # cross check the two against each other
 python structures.py       # depth rating and pylon loads
 python hydrodynamics.py    # drag build up and the current envelope
+python energy.py           # endurance against current
+python bom.py              # bill of materials
+python scene_render.py     # the vehicle in its site
 ```
 
 `varuna_cad.py` reports the volume of the hull it actually built against the

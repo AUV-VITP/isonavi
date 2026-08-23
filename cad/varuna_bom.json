@@ -1,0 +1,20 @@
+{
+ "total_usd": 32825.0,
+ "total_lakh_inr": 27.573,
+ "usd_inr": 84.0,
+ "acoustics_usd": 23710.0,
+ "acoustics_pct": 72.23153084539223,
+ "non_acoustics_usd": 9115.0,
+ "groups": {
+  "acoustics": 23710.0,
+  "propulsion": 1880.0,
+  "power": 850.0,
+  "avionics": 1135.0,
+  "structure": 5250.0
+ },
+ "n_lines": 12,
+ "comparators": {
+  "REMUS 100": 300000,
+  "Iver3": 150000
+ }
+}
