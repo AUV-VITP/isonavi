@@ -163,6 +163,14 @@ if hil:
     cmd("boardWaitMean", hil.get("board_wait_mean"), "{:.1f}")
     cmd("boardBudget", hil.get("board_budget"), "{:.0f}")
     cmd("boardMargin", hil.get("board_margin"), "{:.1f}")
+    cmd("boardLoopNn", hil.get("board_loop_p99"), "{:.1f}")
+    cmd("espSent", hil.get("esp_pwm_sent"), "{:,}")
+    cmd("espEchoes", hil.get("esp_echoes"), "{:,}")
+    cmd("espMatched", hil.get("esp_matched"), "{:,}")
+    cmd("espMismatch", hil.get("esp_mismatches"), "{}")
+    cmd("espLag", hil.get("esp_lag_mean"), "{:.1f}")
+    cmd("espMs", hil.get("esp_ms_mean"), "{:.1f}")
+    cmd("espMsNn", hil.get("esp_ms_p99"), "{:.1f}")
 else:
     for n in ("hilNavMean", "hilNavMax", "hilTicks", "hilSimTime", "hilCrc",
               "boardComputeMean", "boardComputeNn", "boardWaitMean",
