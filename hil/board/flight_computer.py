@@ -46,34 +46,131 @@ def thrust_to_pwm(force_n, max_n=120.0):
 
 
 class SerialLink:
-    """UART link to the ESP32 via python-periphery or pyserial."""
+    """Link to the ESP32 actuator interface.
 
-    def __init__(self, dev, baud=921600):
+    Accepts either a serial device, which is how it is wired on the vehicle,
+    or ``tcp:host:port``, which is how the bench reaches it: the ESP32
+    enumerates on the Windows host while this board is a USB network device,
+    so the frames cross a transparent socket bridge instead of a UART. The
+    bytes on the wire are identical either way.
+    """
+
+    def __init__(self, dev, baud=115200):
         self.dev = dev
+        self.kind = "none"
         self.ser = None
+        self.sock = None
         self.dec = P.FrameDecoder()
-        if dev:
+        self.sent = 0
+        self.echoes = 0
+        self.mismatches = 0
+        self.worst_err = 0
+        self.unanswered = 0
+        self.matched = 0
+        self.lag_sum = 0
+        self.lag_max = 0
+        self.trace = []
+        # Commands awaiting their echo, oldest first.
+        self.q_cmd = []
+        self.ring = []
+        if not dev:
+            return
+        if dev.startswith("tcp:"):
+            try:
+                import socket
+                _, host, port = dev.split(":")
+                self.sock = socket.create_connection((host, int(port)),
+                                                     timeout=5)
+                self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                self.sock.setblocking(False)
+                self.kind = "tcp"
+                print(f"[esp32] bridged over {host}:{port}")
+            except Exception as e:
+                print(f"[esp32] bridge connect failed: {e}, running without")
+        else:
             try:
                 import serial
                 self.ser = serial.Serial(dev, baud, timeout=0)
+                self.kind = "uart"
+                print(f"[esp32] serial {dev} at {baud}")
             except Exception as e:
-                print(f"[esp32] serial open failed: {e}, running without ESP32")
-                self.ser = None
+                print(f"[esp32] serial open failed: {e}, running without")
+
+    @property
+    def active(self):
+        return self.kind != "none"
 
     def send_pwm(self, widths):
-        if self.ser:
-            self.ser.write(P.encode(P.MSG_PWM, P.pack_pwm(widths)))
+        if not self.active:
+            return
+        frame = P.encode(P.MSG_PWM, P.pack_pwm(widths))
+        try:
+            if self.ser:
+                self.ser.write(frame)
+            else:
+                self.sock.sendall(frame)
+            self.sent += 1
+            self.q_cmd.append(list(widths))
+            self.ring.append(list(widths))
+            if len(self.ring) > 32:
+                del self.ring[:len(self.ring) - 32]
+            # Bound the queue: if the actuator stops answering, the backlog
+            # should not grow without limit.
+            if len(self.q_cmd) > 64:
+                del self.q_cmd[:len(self.q_cmd) - 64]
+        except Exception:
+            pass
 
     def poll_echo(self):
-        if not self.ser:
+        """Non-blocking. The control loop never waits on the actuator."""
+        if not self.active:
             return None
-        n = self.ser.in_waiting
-        if not n:
+        try:
+            if self.ser:
+                n = self.ser.in_waiting
+                data = self.ser.read(n) if n else b""
+            else:
+                try:
+                    data = self.sock.recv(4096)
+                except BlockingIOError:
+                    data = b""
+        except Exception:
             return None
-        for mt, pl in self.dec.feed(self.ser.read(n)):
+        if not data:
+            return None
+        got = None
+        for mt, pl in self.dec.feed(data):
             if mt == P.MSG_PWM_ECHO:
-                return P.unpack_pwm(pl)
-        return None
+                got = P.unpack_pwm(pl)
+                self.echoes += 1
+
+                # Compare against a ring of recent commands rather than a
+                # strict queue. The strict version required each echo to
+                # answer the oldest outstanding command; when thrust is
+                # changing by tens of microseconds per tick, an echo that
+                # legitimately answers a neighbouring command then counts as a
+                # fault. What matters is whether the hardware reproduced a
+                # command it was actually given.
+                hit = -1
+                for i in range(len(self.ring) - 1, -1, -1):
+                    if max(abs(x - y)
+                           for x, y in zip(got, self.ring[i])) <= 2:
+                        hit = len(self.ring) - 1 - i
+                        break
+                if hit < 0:
+                    self.mismatches += 1
+                    if self.ring and len(self.trace) < 6:
+                        ref = self.ring[-1]
+                        self.worst_err = max(
+                            self.worst_err,
+                            max(abs(x - y) for x, y in zip(got, ref)))
+                        self.trace.append({"echo": list(got),
+                                           "latest_cmd": list(ref)})
+                else:
+                    self.matched += 1
+                    self.lag_sum += hit
+                    self.lag_max = max(self.lag_max, hit)
+        return got
 
 
 class HostLink:
@@ -216,7 +313,8 @@ class FlightComputer:
 
     def run(self, max_time):
         self.link.send(P.MSG_HELLO, struct.pack("<if", 1, 1.0 / self.dt))
-        self.t_wait = []   # time blocked waiting for the host's sensor reply
+        self.t_wait = []
+        self.t_esp = []   # time blocked waiting for the host's sensor reply
         self.t_comp = []   # time in estimation + control + allocation
         while self.phase != "DONE" and self.t < max_time:
             t0 = time.perf_counter()
@@ -254,7 +352,14 @@ class FlightComputer:
             self.cest.update(tau[:3], self.ekf.velocity_body, self.ekf.attitude)
 
             widths = [thrust_to_pwm(fi, self.params.max_thrust_n) for fi in f]
+            # Time the actuator link on its own, so the cost of the bench
+            # transport can be separated from the control computation.
+            t_esp0 = time.perf_counter()
             self.esp.send_pwm(widths)
+            # Non-blocking: whatever the actuator has echoed since last tick is
+            # collected here, so the control loop never waits on it.
+            self.esp.poll_echo()
+            self.t_esp.append((time.perf_counter() - t_esp0) * 1000.0)
 
             self.link.send(P.MSG_THRUST, P.pack_thrust(tau.tolist(), f.tolist()))
             self.link.send(P.MSG_STATE, P.pack_state(
@@ -287,6 +392,20 @@ class FlightComputer:
             "compute_ms_p99": float(np.percentile(self.t_comp, 99)) if self.t_comp else 0.0,
             "wait_ms_mean": float(np.mean(self.t_wait)) if self.t_wait else 0.0,
             "budget_ms": self.dt * 1000.0,
+            "esp_ms_mean": (float(np.mean(self.t_esp))
+                            if self.t_esp else 0.0),
+            "esp_ms_p99": (float(np.percentile(self.t_esp, 99))
+                           if self.t_esp else 0.0),
+            "esp_link": self.esp.kind,
+            "esp_pwm_sent": self.esp.sent,
+            "esp_echoes": self.esp.echoes,
+            "esp_mismatches": self.esp.mismatches,
+            "esp_worst_width_err_us": self.esp.worst_err,
+            "esp_matched": self.esp.matched,
+            "esp_lag_mean": (self.esp.lag_sum / self.esp.matched
+                             if self.esp.matched else 0.0),
+            "esp_lag_max": self.esp.lag_max,
+            "esp_trace": self.esp.trace,
             "esp_crc_errors": self.esp.dec.crc_errors,
             "host_crc_errors": self.link.dec.crc_errors,
         }

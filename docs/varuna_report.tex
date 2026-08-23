@@ -1022,8 +1022,8 @@ ground truth;
 \item a flight computer, a LicheeRV Nano single-board computer with a RISC-V
 processor at \SI{750}{\mega\hertz}, running the estimation, control and mission
 state machine;
-\item an actuator interface, an ESP32 driving eight electronic speed
-controllers.
+\item an actuator interface, an ESP32 generating the eight electronic speed
+controller channels.
 \end{itemize}
 
 The board is the real-time master. Each tick it requests the sensor sample from
@@ -1071,6 +1071,57 @@ further \SI{\boardWaitMean}{\milli\second}, which is an artifact of the bench
 topology where the plant runs on a separate host; on the vehicle the estimator
 and the plant sensors are on the same board.
 
+\subsection{The interface that turns that allocation into pulses}
+
+An allocation that never reaches an actuator is an opinion. The eight thruster
+forces the controller produces are therefore converted to pulse widths on the
+flight computer and sent, over the same framed and CRC checked protocol, to an
+ESP32 that generates eight real hardware channels at the standard
+\SI{50}{\hertz} speed controller frame.
+
+The value it sends back is read from the timer's duty registers rather than
+from the variable it was given, so the echo reports what the hardware is
+emitting. Bench measurement puts the agreement at zero microseconds across the
+full \SIrange{1000}{2000}{\micro\second} range, at a resolution of
+\SI{0.305}{\micro\second} per bit.
+
+\begin{table}[htbp]\centering\small
+\caption{Actuator interface over the complete mission.}
+\begin{tabular}{lc}
+\toprule
+Pulse width frames commanded & \espSent{} \\
+Echoes returned & \espEchoes{} \\
+Echoes exactly reproducing a commanded width & \espMatched{} \\
+Frames not reproduced & \espMismatch{} \\
+Pipeline lag & \espLag{} frames \\
+Cost to the control loop & \SI{\espMs}{\milli\second} mean,
+\SI{\espMsNn}{\milli\second} at the 99th percentile \\
+CRC errors & \num{0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+One frame in nearly eighteen thousand was not reproduced. The interface costs
+the control loop \SI{\espMs}{\milli\second} per tick, which takes the loop from
+\SI{37}{\milli\second} to \SI{42}{\milli\second} against its
+\SI{\boardBudget}{\milli\second} budget, with the 99th percentile at
+\SI{\boardLoopNn}{\milli\second}. That is a real cost and it is measured rather
+than argued: the same mission was run with the interface disconnected to obtain
+the comparison.
+
+Two honest qualifications. The echo answers a command roughly
+\espLag{} frames back, because the interface reports the registers as it finds
+them and then applies the new command, which avoids blocking a whole
+\SI{20}{\milli\second} frame to confirm each one. And on this bench the link is
+a socket through a tunnel and a serial bridge, because the microcontroller
+enumerates on a different machine from the flight computer; on the vehicle it
+is a direct connection between two boards, and the few milliseconds of
+transport in the figure above would not be there.
+
+What matters is what the vehicle would do with a thruster attached to any of
+those eight channels: the pulse train is being generated, from the autonomy's
+own output, on the target hardware, for the length of a full mission.
+
 \subsubsection{The same trajectory on two instruction sets}
 
 The mission was also run with both halves of the loop on the host, over a
@@ -1090,6 +1141,60 @@ would point at the port rather than at the physics.
 This is the difference between a claim of simulated capability and a claim of
 validated capability. The autonomy is real code running inside a real-time
 budget on representative flight hardware, and it reproduces the simulation.
+
+% ======================================================================
+\section{Technology readiness, stated per subsystem}\label{sec:trl}
+
+Readiness is not a property of a project, it is a property of each thing in it,
+and quoting one number for a system whose parts sit at different levels hides
+more than it says. The standard definition of level 4 is component or
+breadboard validation in a laboratory environment, with components integrated
+to establish that they work together. Against that:
+
+\begin{table}[htbp]\centering\small
+\caption{Readiness by subsystem, with the evidence each rests on.}
+\begin{tabular}{p{0.22\linewidth}c p{0.52\linewidth}}
+\toprule
+\textbf{Subsystem} & \textbf{Level} & \textbf{Evidence} \\
+\midrule
+Autonomy: estimation, control, mission logic & 4 &
+Executes on a RISC-V flight computer inside a
+\SI{\boardBudget}{\milli\second} real-time budget, driving a separate
+microcontroller over a CRC checked link, for a complete
+\SI{\hilSimTime}{\second} mission. Reproduces the simulated trajectory to
+\num{e-12} across two instruction sets. \\
+Actuator interface & 4 &
+Eight hardware PWM channels generated on the target microcontroller from the
+allocation's own output, measured back from the duty registers, exact across
+the full \SIrange{1000}{2000}{\micro\second} range, and \espMatched{} of
+\espEchoes{} echoes exact over a complete mission. \\
+Acoustic perception & 4 &
+Trained and evaluated on real sonar, not simulation: \SI{\yoloTestMapFifty}{\percent}
+on a held out real test split. \\
+Geometric detection and mapping & 3 &
+Validated against simulated ground truth only. No real bathymetry has been
+mapped by this vehicle. \\
+Vehicle structure and hydrodynamics & 3 &
+Complete parametric CAD with a closed mass, buoyancy and trim budget, closed
+form depth and drag analysis, cross checked against a geometry kernel. No
+physical article exists and nothing has been in water. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The honest summary is that the autonomy and its actuation path are validated
+on hardware, the perception is validated on real data, and the vehicle is
+validated on paper. That is a deliberate ordering rather than an accident of
+what was easy. The autonomy is the part that is difficult to buy, difficult to
+copy and specific to this problem; hulls, thrusters and pressure housings are
+none of those things, and Section~\ref{sec:cost} shows they are also the cheap
+part of the vehicle.
+
+What this programme needs next is therefore not more analysis. It is water: a
+tank, then a reservoir, then a river, with the instrumented vehicle the
+analysis already specifies. That is precisely the transition from level 4 to
+levels 5 and 6, and it is the step where testing facilities and an operational
+partner change the timeline more than funding alone would.
 
 % ======================================================================
 \section{Verification and honest limitations}

@@ -30,16 +30,28 @@ sys.path.insert(0, "/home/aadi/dev/rakshatech/hil/common")
 sys.path.insert(0, "/home/aadi/dev/rakshatech/simulation")
 
 
-def reverse_forward(transport, remote_port, local_host, local_port, stop):
-    """Accept channels the board opens on its localhost:remote_port and splice
-    them to the local host_plant listener."""
-    transport.request_port_forward("127.0.0.1", remote_port)
-    while not stop.is_set():
-        chan = transport.accept(1)
-        if chan is None:
-            continue
-        threading.Thread(target=_splice, args=(chan, local_host, local_port),
-                         daemon=True).start()
+# Reverse tunnel destinations, keyed by the port the board connects to.
+ROUTES = {}
+
+
+def _router(chan, origin, server):
+    """Single dispatcher for every reverse tunnel on this transport."""
+    dest = ROUTES.get(server[1])
+    if dest is None:
+        chan.close()
+        return
+    threading.Thread(target=_splice, args=(chan, dest[0], dest[1]),
+                     daemon=True).start()
+
+
+def reverse_forward(transport, remote_port, local_host, local_port):
+    """Publish remote_port on the board, forwarded to local_host:local_port.
+
+    Registering the router every time is harmless: paramiko keeps only one
+    handler, and it is the same one.
+    """
+    ROUTES[remote_port] = (local_host, local_port)
+    transport.request_port_forward("127.0.0.1", remote_port, handler=_router)
 
 
 def _splice(chan, host, port):
@@ -78,7 +90,10 @@ def main():
     ap.add_argument("--max-time", type=float, default=1000.0)
     ap.add_argument("--out", default="/home/aadi/dev/rakshatech/hil/results/hil_run.npz")
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--esp", default="")   # "" = board runs without ESP32
+    ap.add_argument("--esp-bridge", default="",
+                    help="host:port of the Windows side ESP32 bridge")
+    ap.add_argument("--esp-port", type=int, default=5558,
+                    help="port the board sees the bridge on, via the tunnel")
     args = ap.parse_args()
 
     import host_plant
@@ -102,13 +117,19 @@ def main():
     tr.set_keepalive(5)
 
     stop = threading.Event()
-    tth = threading.Thread(target=reverse_forward,
-                           args=(tr, args.port, "127.0.0.1", args.port, stop),
-                           daemon=True)
-    tth.start()
+    reverse_forward(tr, args.port, "127.0.0.1", args.port)
+
+    if args.esp_bridge:
+        bh, bp = args.esp_bridge.split(":")
+        reverse_forward(tr, args.esp_port, bh, int(bp))
+        print(f"[esp32] board localhost:{args.esp_port} tunnelled to "
+              f"the bridge at {bh}:{bp}")
     time.sleep(0.5)
 
-    esp_arg = f"--esp {args.esp}" if args.esp else "--esp ''"
+    if args.esp_bridge:
+        esp_arg = f"--esp tcp:127.0.0.1:{args.esp_port}"
+    else:
+        esp_arg = "--esp ''"
     cmd = (f"cd /root/hil && python3 flight_computer.py "
            f"--host 127.0.0.1 --port {args.port} {esp_arg} "
            f"--max-time {args.max_time}")
@@ -148,6 +169,17 @@ def main():
             os.makedirs(os.path.dirname(args.out), exist_ok=True)
             with open(args.out.replace(".npz", "_board.json"), "w") as f:
                 json.dump(board_report, f, indent=1)
+    if board_report and board_report.get("esp_link", "none") != "none":
+        sent = board_report.get("esp_pwm_sent", 0)
+        ech = board_report.get("esp_echoes", 0)
+        mis = board_report.get("esp_mismatches", 0)
+        print(f"  actuator interface ({board_report['esp_link']}):")
+        print(f"    pwm frames commanded  {sent}")
+        print(f"    echoes returned       {ech}"
+              f"  ({100.0 * ech / max(sent, 1):.1f} percent)")
+        print(f"    width mismatches      {mis}")
+        print(f"    esp crc errors        "
+              f"{board_report.get('esp_crc_errors', 0)}")
     print(f"  host nav error: mean {h.get('nav_error_mean', 0):.3f} m, "
           f"max {h.get('nav_error_max', 0):.3f} m")
     print(f"  final phase: {h.get('final_phase', -1)} (7 = DONE)")

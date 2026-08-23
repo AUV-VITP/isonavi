@@ -103,6 +103,16 @@ out = {
     "board_budget": budget,
     "board_margin": budget / comp_p99,
     "sim_nav_mean": ref["nav_error_mean"],
+    # Actuator interface, present once the ESP32 is genuinely in the loop.
+    "esp_link": board.get("esp_link", "none"),
+    "esp_pwm_sent": board.get("esp_pwm_sent", 0),
+    "esp_echoes": board.get("esp_echoes", 0),
+    "esp_matched": board.get("esp_matched", 0),
+    "esp_mismatches": board.get("esp_mismatches", 0),
+    "esp_lag_mean": board.get("esp_lag_mean", 0.0),
+    "esp_ms_mean": board.get("esp_ms_mean", 0.0),
+    "esp_ms_p99": board.get("esp_ms_p99", 0.0),
+    "board_loop_p99": board.get("loop_ms_p99", 0.0),
 }
 json.dump(out, open(f"{ROOT}/simulation/results/logs/hil_metrics.json", "w"),
           indent=1)
