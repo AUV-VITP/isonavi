@@ -1,6 +1,6 @@
 # AEGIS AUV — Today's ML Build Scope
 
-**Purpose of this document:** context for an agentic coding session (Claude Code) building and pushing
+**Purpose of this document:** scope for the build session that produced the
 Kaggle notebooks. This is a deliberately trimmed slice of the full AEGIS ML program (see the uploaded
 `AEGIS_AUV_Authentic_Dataset_Strategy.pdf` and `AEGIS_AUV_ML_Training_Specification.pdf` for the complete
 long-term plan). **Only what's below is in scope for today.** Do not add tracking, segmentation, sensor
