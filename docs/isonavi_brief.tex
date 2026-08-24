@@ -14,12 +14,8 @@
 \usepackage{siunitx}
 \usepackage[hidelinks]{hyperref}
 
-% Indian rupee sign for pdfLaTeX (barred R, U+20B9 style).
-\newcommand{\rupeesign}{%
-  \mbox{R%
-    \kern-0.52em\raisebox{0.78ex}{\rule{0.42em}{0.045em}}%
-    \kern-0.42em\raisebox{0.38ex}{\rule{0.42em}{0.045em}}}}
-\newcommand{\INR}[1]{\rupeesign\,#1}
+\newcommand{\rupeesign}{Rs.}
+\newcommand{\INR}[1]{Rs.\,#1}
 
 \definecolor{accent}{HTML}{16407A}
 \definecolor{lightgrey}{HTML}{F2F4F7}

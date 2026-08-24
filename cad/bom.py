@@ -339,7 +339,7 @@ def rollup():
 def write_tex(rows, cats, groups, air, prog, cont, docs, parts):
     rate_note = (
         f"Amounts in Indian rupees at "
-        f"\\rupeesign\\,{USD_INR:.2f} per USD "
+        f"Rs.\\,{USD_INR:.2f} per USD "
         f"(mid-market open, 24 August 2026). Sourced prices are USD "
         f"list or quotation figures converted at that rate."
     )
@@ -404,7 +404,7 @@ def write_tex(rows, cats, groups, air, prog, cont, docs, parts):
         r"}} & \\",
         r"\multicolumn{3}{l}{" + f"{prog * USD_INR / 1e5:.1f}" +
         r"~lakh (\INR{" + inr_fmt(prog) + r"} at "
-        r"\rupeesign\," + f"{USD_INR:.2f}" + r" per USD)} \\",
+        r"Rs.\," + f"{USD_INR:.2f}" + r" per USD)} \\",
         r"\bottomrule", r"\end{tabular}", r"\end{table}", "",
     ]
     p = os.path.join(docs, "budget_tables.tex")
@@ -432,7 +432,7 @@ def write_tex(rows, cats, groups, air, prog, cont, docs, parts):
         r"Airframe total & \textbf{\INR{" + inr_fmt(air) + r"}} & \\",
         r"\multicolumn{3}{l}{" + f"{air * USD_INR / 1e5:.1f}" +
         r"~lakh (\INR{" + inr_fmt(air) + r"} at "
-        r"\rupeesign\," + f"{USD_INR:.2f}" + r" per USD)} \\",
+        r"Rs.\," + f"{USD_INR:.2f}" + r" per USD)} \\",
         r"\bottomrule", r"\end{tabular}",
     ]
     # The mass budget table, straight from the layout and the solved
