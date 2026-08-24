@@ -103,9 +103,9 @@ water to 1.2 h against the 2.4 m/s design current, a factor of eighteen. That
 spread is the price of hover authority and has to be quoted against a current,
 never as a single number.
 
-`bom.py` prices one airframe at ₹3,827,800, about ₹38.3 lakh, parts only,
+`bom.py` prices one airframe at ₹38,27,800, about ₹38.3 lakh, parts only,
 at ₹95.64 per USD. The two acoustic instruments are 59 percent of it; the hull,
-propulsion, power and the whole autonomy stack together are ₹1,560,175. The
+propulsion, power and the whole autonomy stack together are ₹15,60,175. The
 cheap part is the part that is ours.
 
 ## Losing a thruster

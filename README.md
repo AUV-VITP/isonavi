@@ -47,8 +47,8 @@ independent runs with sensor noise, DVL dropout and speckle re-randomised.
 | Board compute per tick | 34.6 ms against a 50 ms budget |
 | Mass and buoyancy budget | closes at 28.0 kg, 0.0282 m3, level trim, +1.96 N |
 | Depth rating | 50 m, factor 9.6 on framed buckling |
-| Airframe cost, one vehicle | ₹38.3 lakh (₹3,827,800 at ₹95.64 per USD) |
-| Programme cost including capital, materials and trials | ₹72.8 lakh (₹7,278,908 at ₹95.64 per USD) |
+| Airframe cost, one vehicle | ₹38.3 lakh (₹38,27,800 at ₹95.64 per USD) |
+| Programme cost including capital, materials and trials | ₹72.8 lakh (₹72,78,908 at ₹95.64 per USD) |
 
 ## What is here
 
@@ -177,12 +177,12 @@ Prices are shown in Indian rupees at ₹95.64 per USD (mid-market open,
 
 | Category | Amount | What it buys |
 | --- | --- | --- |
-| Airframe, one vehicle | ₹3,827,800 | The parts that fly. 59 % of it is the two acoustic instruments |
-| Capital equipment and tooling | ₹1,140,890 | Bought once and used for every build after: printers, vacuum and cure kit, pressure test vessel, bench instruments |
-| Raw materials and consumables | ₹172,248 | Per airframe, with stock to remake the hull once |
-| Validation and field trials | ₹1,358,088 | Tow tank, witnessed pressure test, reservoir and river trials, diver ground truth |
-| Contingency at 12 % | ₹779,883 | |
-| **Programme total** | **₹7,278,908** | About ₹72.8 lakh |
+| Airframe, one vehicle | ₹38,27,800 | The parts that fly. 59 % of it is the two acoustic instruments |
+| Capital equipment and tooling | ₹11,40,890 | Bought once and used for every build after: printers, vacuum and cure kit, pressure test vessel, bench instruments |
+| Raw materials and consumables | ₹1,72,248 | Per airframe, with stock to remake the hull once |
+| Validation and field trials | ₹13,58,088 | Tow tank, witnessed pressure test, reservoir and river trials, diver ground truth |
+| Contingency at 12 % | ₹7,79,883 | |
+| **Programme total** | **₹72,78,908** | About ₹72.8 lakh |
 
 The report gives all 58 lines with the reason each one exists and the basis
 its price rests on, published, quotation, market, workshop or service. The

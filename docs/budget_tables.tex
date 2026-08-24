@@ -13,11 +13,11 @@
 \endhead
 \bottomrule
 \endfoot
-Forward looking multibeam sonar, Oculus M750d class & 1 & \INR{1,434,600} & \INR{1,434,600} & The only sensor that returns anything at 3.2 g/L of suspended sediment. Its 130 degree by 20 degree fan at 750 kHz is what sets the swath the mapper integrates, so the survey rate and the whole mission plan follow from this one choice. \emph{(quotation)} \\
-Doppler velocity log, Water Linked A50 & 1 & \INR{833,024} & \INR{833,024} & Bottom lock velocity is the only measurement that bounds dead reckoning drift with no GPS. Without it position error grows without limit and the 0.32 m navigation result does not exist. \emph{(published)} \\
+Forward looking multibeam sonar, Oculus M750d class & 1 & \INR{14,34,600} & \INR{14,34,600} & The only sensor that returns anything at 3.2 g/L of suspended sediment. Its 130 degree by 20 degree fan at 750 kHz is what sets the swath the mapper integrates, so the survey rate and the whole mission plan follow from this one choice. \emph{(quotation)} \\
+Doppler velocity log, Water Linked A50 & 1 & \INR{8,33,024} & \INR{8,33,024} & Bottom lock velocity is the only measurement that bounds dead reckoning drift with no GPS. Without it position error grows without limit and the 0.32 m navigation result does not exist. \emph{(published)} \\
 Attitude and heading reference unit, Xsens MTi-3 & 1 & \INR{40,647} & \INR{40,647} & Supplies the attitude and gyro bias states of the twelve state filter. Chosen at the small industrial grade rather than tactical grade because the DVL, not the gyro, is what bounds the solution here. \emph{(published)} \\
 Depth transducer, 30 bar & 1 & \INR{8,129} & \INR{8,129} & The only directly observed, drift free axis on the vehicle. It anchors depth absolutely while horizontal position is dead reckoned. \emph{(published)} \\
-Thruster, T500 class, 158 N at 24 V & 8 & \INR{75,556} & \INR{604,445} & Eight vectored units give six degree of freedom control with two spare. The 120 N saturation the allocator assumes needs a unit rated above it: a 51 N T200 class thruster cannot hold the design current and was the wrong part for this vehicle. \emph{(published)} \\
+Thruster, T500 class, 158 N at 24 V & 8 & \INR{75,556} & \INR{6,04,445} & Eight vectored units give six degree of freedom control with two spare. The 120 N saturation the allocator assumes needs a unit rated above it: a 51 N T200 class thruster cannot hold the design current and was the wrong part for this vehicle. \emph{(published)} \\
 Electronic speed controller, 50 A & 8 & \INR{11,572} & \INR{92,580} & Rated for the T500 peak draw inside a sealed hull with no airflow. A 30 A controller sized for the smaller thruster would run hot at the duty this mission demands. \emph{(published)} \\
 Thruster cable runs and pressure penetrators & 8 & \INR{2,678} & \INR{21,423} & Every thruster lead crosses the pressure boundary, so each one is a potential flood path and is fitted with a compression gland rated past the depth. \emph{(published)} \\
 Lithium ion cells, 21700, 5.0 Ah, 14S6P & 84 & \INR{574} & \INR{48,203} & 84 cells give 1478 Wh, which is the 1.5 kWh the endurance model spends. At 17.6 Wh and 69 g a cell this is 5.80 kg of cells; the pack cannot be lighter without breaking the energy density of the chemistry. \emph{(published)} \\
@@ -29,10 +29,10 @@ Actuator microcontroller & 1 & \INR{956} & \INR{956} & Generates the eight hardw
 Carrier and interface board, four layer, assembled & 1 & \INR{18,172} & \INR{18,172} & Fans the flight computer out to eight thruster channels, the CRC checked serial link, the sensor buses and the power rails. Prototype quantity, so the assembly dominates the board cost. \emph{(quotation)} \\
 DC-DC converters, 24 V to 12 V and 5 V & 1 & \INR{8,129} & \INR{8,129} & The pack runs at 50 V nominal and nothing else aboard wants that. Isolated rails also stop thruster switching noise reaching the filter. \emph{(published)} \\
 Leak detection probes & 4 & \INR{1,722} & \INR{6,886} & Four probes at the low points. A flood detected early is an abort and a recovered vehicle; detected late it is neither. \emph{(published)} \\
-Hull, carbon epoxy layup and cure & 1 & \INR{210,408} & \INR{210,408} & The faired hull is the pressure boundary and the drag surface at once, which is what buys the 2.69 m/s envelope. Cost is the mandrel, the layup and the cure cycle. \emph{(workshop)} \\
+Hull, carbon epoxy layup and cure & 1 & \INR{2,10,408} & \INR{2,10,408} & The faired hull is the pressure boundary and the drag surface at once, which is what buys the 2.69 m/s envelope. Cost is the mandrel, the layup and the cure cycle. \emph{(workshop)} \\
 Ring frames, machined & 3 & \INR{10,520} & \INR{31,561} & Three frames at the mid body quarter points. They shorten the unsupported length and move collapse from 66 m to 482 m, which is what makes a 4 mm skin viable at all. \emph{(workshop)} \\
 Bulkheads and aft closure plate, machined aluminium & 1 & \INR{61,210} & \INR{61,210} & Carries the penetrator field and takes the full end load at depth. \emph{(workshop)} \\
-Wet mateable connector set & 1 & \INR{120,506} & \INR{120,506} & Lets the payload and thruster looms be broken on a boat deck without opening the pressure vessel in the field. \emph{(published)} \\
+Wet mateable connector set & 1 & \INR{1,20,506} & \INR{1,20,506} & Lets the payload and thruster looms be broken on a boat deck without opening the pressure vessel in the field. \emph{(published)} \\
 Acoustic window, cast polyurethane & 1 & \INR{29,648} & \INR{29,648} & Acoustically matched to water so the sonar sees through the hull instead of into it. \emph{(workshop)} \\
 Thruster pylons, machined & 8 & \INR{9,086} & \INR{72,686} & Set the moment arms the allocator depends on. Sized by stiffness and by flow rather than by strength, at a factor of 24 on root bending. \emph{(workshop)} \\
 Stabiliser fins, laid up & 4 & \INR{6,695} & \INR{26,779} & Not a refinement. A faired hull is directionally unstable under its own Munk moment, and the fins supply roughly sixty times the restoring moment the buoyancy offset does at survey speed. \emph{(workshop)} \\
@@ -43,7 +43,7 @@ Drop weight release, burn wire & 1 & \INR{17,215} & \INR{17,215} & Takes the veh
 Trim ballast, lead & 4 & \INR{574} & \INR{2,295} & 3.15 kg solved, not chosen, so that displaced volume, dry mass and level trim all close at once. Priced to the next whole kilogram. \emph{(market)} \\
 Fasteners, harness and assembly consumables & 1 & \INR{40,169} & \INR{40,169} & Marine grade fasteners, looms, glands and the small parts that do not appear on a drawing but do appear on an invoice. \emph{(market)} \\
 \addlinespace
-\textbf{Subtotal} & & & \textbf{\INR{3,827,800}} & \\
+\textbf{Subtotal} & & & \textbf{\INR{38,27,800}} & \\
 \end{longtable}
 \end{small}
 
@@ -60,7 +60,7 @@ Fasteners, harness and assembly consumables & 1 & \INR{40,169} & \INR{40,169} & 
 \endhead
 \bottomrule
 \endfoot
-FDM 3D printer, 256 mm class, enclosed & 1 & \INR{114,672} & \INR{114,672} & Prints the internal chassis, sensor mounts, cable guides, layup jigs and the formers the hull is laid up over. Enclosed and heated because the structural parts are printed in carbon filled nylon, not PLA. \emph{(published)} \\
+FDM 3D printer, 256 mm class, enclosed & 1 & \INR{1,14,672} & \INR{1,14,672} & Prints the internal chassis, sensor mounts, cable guides, layup jigs and the formers the hull is laid up over. Enclosed and heated because the structural parts are printed in carbon filled nylon, not PLA. \emph{(published)} \\
 MSLA resin printer and wash and cure station & 1 & \INR{38,256} & \INR{38,256} & Fine feature parts the filament printer cannot hold tolerance on: connector shells, sonar mount shims and O-ring test coupons. \emph{(published)} \\
 Vacuum pump, bagging kit and consumable set & 1 & \INR{59,297} & \INR{59,297} & A wet layup cured without vacuum keeps its voids, and voids are where a pressure hull fails. This is the difference between a part that holds 50 m and one that looks like it should. \emph{(published)} \\
 Composite curing oven, programmable & 1 & \INR{86,076} & \INR{86,076} & The epoxy needs a controlled post cure to reach its rated glass transition. Curing on a bench gives a hull with an unknown strength. \emph{(published)} \\
@@ -69,13 +69,13 @@ Bench power supply, 0 to 60 V, 20 A & 1 & \INR{40,169} & \INR{40,169} & Runs the
 Oscilloscope, four channel, 100 MHz & 1 & \INR{65,035} & \INR{65,035} & The actuator interface claim is that the pulse widths at the pins match the allocation. That is measured on a scope or it is an assertion. \emph{(published)} \\
 Soldering and rework station, hot air & 1 & \INR{24,866} & \INR{24,866} & Prototype boards get reworked. Fine pitch parts need controlled heat. \emph{(published)} \\
 Digital multimeters & 2 & \INR{8,608} & \INR{17,215} & Two, because insulation resistance and continuity checks on a sealed hull are two hands and two instruments. \emph{(published)} \\
-Hydrostatic pressure test vessel, 60 bar & 1 & \INR{306,048} & \INR{306,048} & The 50 m rating is a closed form buckling calculation with a factor of 9.6. A pressure vessel is the only thing that turns that into a qualified depth rather than a prediction. \emph{(quotation)} \\
+Hydrostatic pressure test vessel, 60 bar & 1 & \INR{3,06,048} & \INR{3,06,048} & The 50 m rating is a closed form buckling calculation with a factor of 9.6. A pressure vessel is the only thing that turns that into a qualified depth rather than a prediction. \emph{(quotation)} \\
 Ballast, trim and lifting rig & 1 & \INR{43,038} & \INR{43,038} & Weigh, trim and float the vehicle repeatably. The mass budget closes to the milligram on paper; this is what checks it in water. \emph{(workshop)} \\
-Workstation for CFD and network training & 1 & \INR{229,536} & \INR{229,536} & The tow tank campaign is validated against CFD, and the perception models are retrained as real sonar arrives. Both need a machine with a GPU and real memory. \emph{(published)} \\
+Workstation for CFD and network training & 1 & \INR{2,29,536} & \INR{2,29,536} & The tow tank campaign is validated against CFD, and the perception models are retrained as real sonar arrives. Both need a machine with a GPU and real memory. \emph{(published)} \\
 Charging bunker, extinguisher and personal protection & 1 & \INR{36,343} & \INR{36,343} & A 1.5 kWh lithium pack is charged in the same room people work in. This is the cheapest line here and the one whose absence ends the programme. \emph{(published)} \\
 Hand tools, torque wrenches and workshop set & 1 & \INR{51,646} & \INR{51,646} & Sealed joints are torque controlled or they are not sealed. Calibrated torque tools rather than judgement. \emph{(market)} \\
 \addlinespace
-\textbf{Subtotal} & & & \textbf{\INR{1,140,890}} & \\
+\textbf{Subtotal} & & & \textbf{\INR{11,40,890}} & \\
 \end{longtable}
 \end{small}
 
@@ -102,7 +102,7 @@ Marine potting and encapsulation compound & 1 & \INR{13,390} & \INR{13,390} & Se
 Cable, heatshrink, lugs and connectors & 1 & \INR{24,866} & \INR{24,866} & Tinned marine cable throughout, because untinned copper in a humid hull corrodes at the terminations first. \emph{(market)} \\
 Abrasives, solvents, gloves and shop consumables & 1 & \INR{17,215} & \INR{17,215} & Surface preparation is most of the labour in a bonded assembly and all of the reason bonds fail. \emph{(market)} \\
 \addlinespace
-\textbf{Subtotal} & & & \textbf{\INR{172,248}} & \\
+\textbf{Subtotal} & & & \textbf{\INR{1,72,248}} & \\
 \end{longtable}
 \end{small}
 
@@ -119,14 +119,14 @@ Abrasives, solvents, gloves and shop consumables & 1 & \INR{17,215} & \INR{17,21
 \endhead
 \bottomrule
 \endfoot
-Tow tank campaign, five days & 1 & \INR{401,688} & \INR{401,688} & Replaces the closed form drag and added mass coefficients, which agree with the CAD derived values to 21 percent and are the least certain numbers in the report. The station keeping margin of 1.12 rests directly on them. \emph{(service)} \\
-Hydrostatic proof test, witnessed & 1 & \INR{105,204} & \INR{105,204} & An independent witness on the depth rating, so the qualification is not self certified. \emph{(service)} \\
-Tank and reservoir trials, ten days & 1 & \INR{248,664} & \INR{248,664} & First wet running of the integrated vehicle: buoyancy, trim, thruster authority and the autonomy closing its own loop against real water. \emph{(service)} \\
-Instrumented river trial, boat and crew, six days & 1 & \INR{372,996} & \INR{372,996} & The only way to see the vehicle in the current and turbidity it was designed for. Everything upstream of this is a prediction about that day. \emph{(service)} \\
-Diver survey for scour ground truth & 1 & \INR{172,152} & \INR{172,152} & The scour measurement is the statutory product. It is only validated against an independent survey of the same pier. \emph{(service)} \\
+Tow tank campaign, five days & 1 & \INR{4,01,688} & \INR{4,01,688} & Replaces the closed form drag and added mass coefficients, which agree with the CAD derived values to 21 percent and are the least certain numbers in the report. The station keeping margin of 1.12 rests directly on them. \emph{(service)} \\
+Hydrostatic proof test, witnessed & 1 & \INR{1,05,204} & \INR{1,05,204} & An independent witness on the depth rating, so the qualification is not self certified. \emph{(service)} \\
+Tank and reservoir trials, ten days & 1 & \INR{2,48,664} & \INR{2,48,664} & First wet running of the integrated vehicle: buoyancy, trim, thruster authority and the autonomy closing its own loop against real water. \emph{(service)} \\
+Instrumented river trial, boat and crew, six days & 1 & \INR{3,72,996} & \INR{3,72,996} & The only way to see the vehicle in the current and turbidity it was designed for. Everything upstream of this is a prediction about that day. \emph{(service)} \\
+Diver survey for scour ground truth & 1 & \INR{1,72,152} & \INR{1,72,152} & The scour measurement is the statutory product. It is only validated against an independent survey of the same pier. \emph{(service)} \\
 Doppler log and inertial unit calibration & 1 & \INR{57,384} & \INR{57,384} & A navigation claim rests on the sensors being what their datasheets say. Calibrated once, against a reference. \emph{(service)} \\
 \addlinespace
-\textbf{Subtotal} & & & \textbf{\INR{1,358,088}} & \\
+\textbf{Subtotal} & & & \textbf{\INR{13,58,088}} & \\
 \end{longtable}
 \end{small}
 
@@ -136,15 +136,15 @@ Doppler log and inertial unit calibration & 1 & \INR{57,384} & \INR{57,384} & A 
 \toprule
 \textbf{Category} & \textbf{Amount} & \textbf{Share} \\
 \midrule
-Airframe, one vehicle & \INR{3,827,800} & 53 \% \\
-Capital equipment and tooling, bought once & \INR{1,140,890} & 16 \% \\
-Raw materials and consumables & \INR{172,248} & 2 \% \\
-Validation and field trials & \INR{1,358,088} & 19 \% \\
+Airframe, one vehicle & \INR{38,27,800} & 53 \% \\
+Capital equipment and tooling, bought once & \INR{11,40,890} & 16 \% \\
+Raw materials and consumables & \INR{1,72,248} & 2 \% \\
+Validation and field trials & \INR{13,58,088} & 19 \% \\
 \midrule
-Contingency at 12 percent & \INR{779,883} & \\
+Contingency at 12 percent & \INR{7,79,883} & \\
 \midrule
-\textbf{Programme total} & \textbf{\INR{7,278,908}} & \\
-\multicolumn{3}{l}{72.8~lakh (\INR{7,278,908} at Rs.\,95.64 per USD)} \\
+\textbf{Programme total} & \textbf{\INR{72,78,908}} & \\
+\multicolumn{3}{l}{72.8~lakh (\INR{72,78,908} at Rs.\,95.64 per USD)} \\
 \bottomrule
 \end{tabular}
 \end{table}

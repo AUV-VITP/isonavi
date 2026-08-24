@@ -73,12 +73,12 @@ README_PINS = [
     ("cadNetBuoy", "1.96"),
     ("cadBG", "25.6"),
     ("structDepth", "50"),
-    ("bomTotal", "3,827,800"),
+    ("bomTotal", "38,27,800"),
     ("bomLakh", "38.3"),
-    ("budgetProgramme", "7,278,908"),
+    ("budgetProgramme", "72,78,908"),
     ("budgetProgrammeLakh", "72.8"),
-    ("budgetCapital", "1,140,890"),
-    ("budgetValidation", "1,358,088"),
+    ("budgetCapital", "11,40,890"),
+    ("budgetValidation", "13,58,088"),
     ("bomRate", "95.64"),
 ]
 

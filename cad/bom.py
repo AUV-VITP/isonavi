@@ -32,14 +32,29 @@ USD_INR = 95.64
 CONTINGENCY = 0.12      # on the programme, not on the airframe
 
 
+def indian_group(n):
+    """Integer grouping used in India: 38,27,800 not 3,827,800."""
+    n = int(round(n))
+    sign = "-" if n < 0 else ""
+    s = str(abs(n))
+    if len(s) <= 3:
+        return sign + s
+    last3, rest = s[-3:], s[:-3]
+    parts = []
+    while rest:
+        parts.append(rest[-2:])
+        rest = rest[:-2]
+    return sign + ",".join(list(reversed(parts)) + [last3])
+
+
 def inr(usd):
     """Convert a USD line to whole rupees."""
     return int(round(usd * USD_INR))
 
 
 def inr_fmt(usd):
-    """Whole rupees with thousands separators, for tables and macros."""
-    return f"{inr(usd):,}"
+    """Whole rupees with Indian grouping, for tables and macros."""
+    return indian_group(inr(usd))
 
 # category, group, item, qty, unit USD, basis, why the line exists
 LINES = [
