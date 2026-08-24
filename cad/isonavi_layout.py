@@ -233,7 +233,12 @@ def internal_parts(hull_mass, shell_x=0.0):
            "structure"))
     a(Part("ring frames", 0.90, (0.0, 0, 0.0), 0.0, "structure"))
     a(Part("equipment rails", 0.80, (0.0, 0, -0.030), 0.0, "structure"))
-    a(Part("battery pack 14S4P", 4.00, (0.080, 0, -0.045), 0.0, "power"))
+    # 84 Samsung INR21700-50E in 14S6P. 17.6 Wh and 69 g a cell gives
+    # 1478 Wh and 5.80 kg of cells; the balance is the management
+    # board, interconnects, holders and potting, at 205 Wh/kg for the
+    # finished pack. A 4 kg pack at this energy would be 375 Wh/kg,
+    # which no cell chemistry reaches.
+    a(Part("battery pack 14S6P", 7.20, (0.080, 0, -0.045), 0.0, "power"))
     a(Part("electronics stack", 0.85, (-0.090, 0, 0.020), 0.0, "avionics"))
     a(Part("thruster ESC bank", 0.45, (-0.155, 0, -0.010), 0.0, "avionics"))
     a(Part("inertial unit", 0.12, (0.0, 0, 0.005), 0.0, "sensors"))

@@ -14,6 +14,13 @@
 \usepackage{siunitx}
 \usepackage[hidelinks]{hyperref}
 
+% Indian rupee sign for pdfLaTeX (barred R, U+20B9 style).
+\newcommand{\rupeesign}{%
+  \mbox{R%
+    \kern-0.52em\raisebox{0.78ex}{\rule{0.42em}{0.045em}}%
+    \kern-0.42em\raisebox{0.38ex}{\rule{0.42em}{0.045em}}}}
+\newcommand{\INR}[1]{\rupeesign\,#1}
+
 \definecolor{accent}{HTML}{16407A}
 \definecolor{lightgrey}{HTML}{F2F4F7}
 
@@ -77,7 +84,7 @@ On a RISC-V flight computer & \SI{\hilNavMean}{\metre} &
 Endurance, slack to design current & \enHoursCalm{} to
 \SI{\enHoursSite}{\hour} \\
 Depth rating & \SI{\structDepth}{\metre} &
-Parts cost, one airframe & \SI{\bomLakh}{} lakh INR \\
+Parts cost, one airframe & \INR{\bomLakh{}~lakh} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -176,13 +183,14 @@ and reported as a negative result rather than omitted.
 
 \section*{Where the money goes, and why that matters}
 
-One airframe costs \bomTotal{} USD in parts, about \SI{\bomLakh}{} lakh INR.
-The distribution is the interesting part: the two acoustic instruments are
-\SI{\bomAcousticsPct}{\percent} of it, and the hull, propulsion, power and the
-entire autonomy stack together come to \num{\bomRest} USD.
+One airframe costs \INR{\bomTotal} in parts, about \INR{\bomLakh{}~lakh}
+at \rupeesign\,\bomRate{} per USD. The distribution is the interesting part:
+the two acoustic instruments are \SI{\bomAcousticsPct}{\percent} of it, and
+the hull, propulsion, power and the entire autonomy stack together come to
+\INR{\bomRest}.
 
-The work in this proposal therefore runs on hardware costing a few hundred
-dollars, and it is the part that is genuinely ours. Hulls, thrusters and
+The work in this proposal therefore runs on hardware costing a few tens of
+thousand rupees, and it is the part that is genuinely ours. Hulls, thrusters and
 pressure housings are not difficult to buy or to copy; the autonomy that flies
 a survey in zero visibility against a \SI{\siteCurrent}{\metre\per\second}
 current is. That is where the effort has gone, and it is why the readiness
@@ -190,7 +198,13 @@ table above is strongest exactly where the value is.
 
 \section*{What the funding buys}
 
-Not more analysis. Water.
+Not more analysis. Water. The programme is \INR{\budgetProgramme}, about
+\INR{\budgetProgrammeLakh{}~lakh}, of which the airframe is \INR{\bomTotal}.
+The balance is \INR{\budgetCapital} of equipment bought once and used for every
+build after it, \INR{\budgetMaterials} of stock, and \INR{\budgetValidation} of
+trials, with \SI{\budgetContingencyPct}{\percent} contingency. The full sheet
+in the technical report gives every line, why it exists and whether its price
+is a published one, a quotation or a workshop estimate.
 
 \begin{center}\small
 \begin{tabular}{@{}p{0.16\linewidth}p{0.40\linewidth}p{0.38\linewidth}@{}}

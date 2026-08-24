@@ -21,14 +21,14 @@ buoyancy so the vehicle surfaces on a power failure.
 ## What it found
 
 The separation between centre of buoyancy and centre of gravity, which sets the
-passive roll and pitch restoring moment, falls out of the layout at **27.3 mm**.
+passive roll and pitch restoring moment, falls out of the layout at **25.6 mm**.
 The dynamics model had assumed 85 mm.
 
 85 mm is not reachable in a hull this size: it puts the centre of gravity
 15 mm off the bottom skin, which no arrangement of a battery and a pressure
 housing can achieve. The simulation was corrected to the CAD value and the full
 mission and repeatability suite re-run. The result barely moves, because at
-survey speed the fins supply roughly fifty times the restoring moment the
+survey speed the fins supply roughly sixty times the restoring moment the
 buoyancy offset does, and the fixes are documented in the report.
 
 The cross check found a second error. The solve had been placing the hull's
@@ -103,10 +103,10 @@ water to 1.2 h against the 2.4 m/s design current, a factor of eighteen. That
 spread is the price of hover authority and has to be quoted against a current,
 never as a single number.
 
- prices one airframe at 32,825 USD, about 27.6 lakh INR, parts only.
-The two acoustic instruments are 72 percent of it; the hull, propulsion, power
-and the whole autonomy stack together are 9,115 USD. The cheap part is the part
-that is ours.
+`bom.py` prices one airframe at ₹3,827,800, about ₹38.3 lakh, parts only,
+at ₹95.64 per USD. The two acoustic instruments are 59 percent of it; the hull,
+propulsion, power and the whole autonomy stack together are ₹1,560,175. The
+cheap part is the part that is ours.
 
 ## Losing a thruster
 

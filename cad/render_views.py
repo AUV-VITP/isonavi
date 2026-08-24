@@ -365,14 +365,29 @@ def dimensioned(tris, norms, cols, info, geom):
     print("wrote isonavi_dimensioned.png")
 
 
+def _MASS_OF(fragment):
+    """Mass of the first layout part whose name contains fragment.
+
+    Read from the layout rather than written into the label, so a change in
+    the parts list cannot leave the drawing quoting a mass the vehicle no
+    longer has.
+    """
+    for q in V.L.solve_layout()[0]:
+        if fragment in q.name:
+            return q.mass
+    raise KeyError(fragment)
+
+
 CALLOUTS = [
     ("forward looking sonar", (0.360, 0, 0.0)),
     ("electronics stack", (-0.090, 0, 0.020)),
     ("thruster ESC bank", (-0.155, 0, -0.010)),
     ("aft closure", (-0.300, 0, 0.0)),
     ("ring frame", (-0.200, 0, 0.062)),
-    ("battery pack, 4.0 kg", (0.080, 0, -0.045)),
-    ("trim ballast, 9.0 kg", (-0.023, 0, -0.062)),
+    (f"battery pack, {_MASS_OF('battery'):.1f} kg",
+     (0.080, 0, -0.045)),
+    (f"trim ballast, {_MASS_OF('trim ballast'):.1f} kg",
+     (-0.023, 0, -0.062)),
     ("equipment rails", (0.180, 0, -0.052)),
     ("doppler velocity log", (0.090, 0, -0.108)),
 ]

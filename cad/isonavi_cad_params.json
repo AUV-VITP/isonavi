@@ -14,16 +14,16 @@
  "cg_mm": [
   -35.37,
   0.0,
-  -21.67
+  -19.73
  ],
  "cb_mm": [
   -35.37,
   0.0,
   5.92
  ],
- "bg_mm": 27.59,
+ "bg_mm": 25.65,
  "trim_offset_mm": 0.0,
- "ballast_kg": 6.35,
+ "ballast_kg": 3.15,
  "n_thrusters": 8,
  "n_parts": 52
 }

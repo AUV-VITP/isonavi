@@ -4,6 +4,7 @@
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{longtable}
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{xcolor}
@@ -12,6 +13,13 @@
 \usepackage{fancyhdr}
 \usepackage{siunitx}
 \usepackage[hidelinks]{hyperref}
+
+% Indian rupee sign for pdfLaTeX (barred R, U+20B9 style).
+\newcommand{\rupeesign}{%
+  \mbox{R%
+    \kern-0.52em\raisebox{0.78ex}{\rule{0.42em}{0.045em}}%
+    \kern-0.42em\raisebox{0.38ex}{\rule{0.42em}{0.045em}}}}
+\newcommand{\INR}[1]{\rupeesign\,#1}
 
 \definecolor{accent}{HTML}{16407A}
 \definecolor{lightgrey}{HTML}{F2F4F7}
@@ -115,7 +123,7 @@ Bathymetric map error & \SI{\repMapRmseMean}{\metre} \\
 On a RISC-V flight computer & \SI{\hilNavMean}{\metre} &
 Endurance, slack to design current & \enHoursCalm{} to \SI{\enHoursSite}{\hour} \\
 Depth rating & \SI{\structDepth}{\metre} &
-Parts cost, one airframe & \SI{\bomLakh}{} lakh INR \\
+Parts cost, one airframe & \INR{\bomLakh{}~lakh} \\
 \bottomrule
 \end{tabular}
 \end{minipage}\label{atglance}
@@ -230,11 +238,11 @@ nose first.
 \toprule
 & \textbf{Open frame baseline} & \textbf{isonavi-1} \\
 \midrule
-Mass & \SI{13.5}{\kilogram} & \SI{28.0}{\kilogram} \\
-Axial quadratic drag $X_{u|u|}$ & 141 & 32 \\
+Mass & \SI{13.5}{\kilogram} & \SI{\cadMass}{\kilogram} \\
+Axial quadratic drag $X_{u|u|}$ & 141 & \hydroDragTotal{} \\
 Thrust per unit & \SI{51}{\newton} & \SI{120}{\newton} \\
 Stabilising fins & none & yes \\
-Maximum holdable current & \SI{0.96}{\metre\per\second} & \SI{\misEnvelope}{\metre\per\second} \\
+Maximum holdable current & \SI{0.96}{\metre\per\second} & \SI{\hydroEnvCad}{\metre\per\second} \\
 Station keeping at \SI{1.96}{\metre\per\second} & swept, \SI{14.0}{\metre} error & holds, \SI{0.40}{\metre} RMSE \\
 \bottomrule
 \end{tabular}
@@ -277,25 +285,7 @@ station, so the vehicle floats level.
 \begin{table}[htbp]\centering\small
 \caption{Mass budget by group. The solve closes on all three constraints
 simultaneously.}\label{tab:mass}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Group} & \textbf{Mass (kg)} & \textbf{Share} \\
-\midrule
-Trim ballast & 9.03 & 32.3 \% \\
-Structure & 8.73 & 31.2 \% \\
-Power & 4.00 & 14.3 \% \\
-Propulsion & 2.72 & 9.7 \% \\
-Sensors & 2.22 & 7.9 \% \\
-Avionics & 1.30 & 4.6 \% \\
-\midrule
-Total & \cadMass{} & \\
-\midrule
-\multicolumn{3}{l}{Displaced volume \SI{\cadVolume}{\cubic\metre},
-net buoyancy \SI{\cadNetBuoy}{\newton} positive} \\
-\multicolumn{3}{l}{Longitudinal trim \SI{0.000}{\milli\metre},
-hull volume closes to \SI{\cadVolErr}{\percent}} \\
-\bottomrule
-\end{tabular}
+\input{mass_by_group}
 \end{table}
 
 Because those three are solved, everything else the layout produces is a
@@ -517,18 +507,20 @@ skin, which no arrangement of a battery and a pressure housing achieves. The
 figure was an estimate made before the vehicle had an internal layout, and it
 was optimistic by a factor of three.
 
-The simulation was corrected to the CAD value, \SI{27.3}{\milli\metre}, and
-the full mission and repeatability suite re-run. The layout has since gained
-its ancillary hardware and now gives \SI{\cadBG}{\milli\metre}; the models are
-therefore one percent apart, which the sensitivity below shows to be
-immaterial. The results move very little, and the reason is
-worth stating because it is the same argument that justified the fins in the
-first place. At survey speed the restoring moment is dominated by the fins,
-which contribute \SI{440}{\newton\metre\per\radian} at \SI{2}{\metre\per\second}
-against \SI{7.5}{\newton\metre\per\radian} from the buoyancy offset. Correcting
-a term worth two percent of the total changes the net stabilising moment at
-speed by four percent. At hover the buoyancy term is all there is, and it
-halves, but it remains positive and the vehicle remains upright.
+The simulation was corrected to \SI{\cadBGSim}{\milli\metre} and the full
+mission and repeatability suite re-run. The layout has since gained its
+ancillary hardware and a battery sized to a real cell chemistry, and now gives
+\SI{\cadBG}{\milli\metre}. The two differ, and it does not matter, for a
+reason worth stating because it is the same argument that justified the fins.
+
+At survey speed the restoring moment is dominated by the fins, which
+contribute \SI{440}{\newton\metre\per\radian} at \SI{2}{\metre\per\second}
+against \SI{\cadRighting}{\newton\metre\per\radian} from the buoyancy offset.
+The buoyancy term is therefore under two percent of the total, and the
+disagreement between the two separations moves the whole restoring moment by
+about one part in a thousand. At hover the buoyancy term is all there is, and
+it is smaller than it was, but it remains positive and the vehicle remains
+upright with a righting moment that still recovers it from any attitude.
 
 The layout is then cross checked against the geometry kernel, which found a
 second error. The solve had been placing the hull's displaced volume at the
@@ -1327,40 +1319,67 @@ and is not offered as one.
 \begin{table}[htbp]\centering\small
 \caption{Bill of materials by subsystem, one airframe. The doppler log is a
 published price; the imaging sonar is quotation only and is an estimate
-carrying real uncertainty.}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Subsystem} & \textbf{USD} & \textbf{Share} \\
-\midrule
-Acoustics, sonar and doppler log & \num{23710} & 72 \% \\
-Structure, hull and fittings & \num{5250} & 16 \% \\
-Propulsion, eight thrusters and drives & \num{1880} & 6 \% \\
-Avionics, computing and inertial & \num{1135} & 4 \% \\
-Power & \num{850} & 3 \% \\
-\midrule
-Total & \bomTotal{} & \\
-\multicolumn{3}{l}{\SI{\bomLakh}{} lakh INR at \bomRate{} per USD} \\
-\bottomrule
-\end{tabular}
+carrying real uncertainty.}\label{tab:bom}
+\input{budget_subsystem}
 \end{table}
 
 The distribution is the interesting part. The two acoustic instruments are
 \SI{\bomAcousticsPct}{\percent} of the bill. The hull, the propulsion, the
 power system and the entire autonomy stack together come to
-\SI{\bomRest}{} USD.
+\INR{\bomRest}.
 
 That has a direct consequence for where effort is worth spending. The work in
 this report, the estimation, the control, the mission logic and the geometric
-detector, runs on a computer that costs a few hundred dollars, and it is the
+detector, runs on a computer that costs a few tens of thousand rupees, and it is the
 part that is genuinely ours. The cost sits in two imported instruments. If this
 programme is to reduce cost further, the lever is the sonar, not the vehicle,
 and that is a separate and much larger undertaking than the one proposed here.
 
+\subsection{What the programme costs, line by line}
+
+The bill above is the vehicle. It is not the programme. Three other things
+have to be bought, and quoting only the parts would understate what a build
+actually takes.
+
+\emph{Capital equipment} is bought once and serves every vehicle after the
+first. Some of it is unglamorous and load bearing: a wet layup cured without
+vacuum keeps its voids, and voids are where a pressure hull fails, so the
+vacuum kit is not optional. A printer earns its place because the internal
+chassis, the sensor mounts, the cable guides and the layup formers are all
+printed rather than machined, which is most of the reason a first article can
+be built in months rather than a year.
+
+\emph{Materials} are consumed per airframe, with enough stock to remake the
+hull once, because the first article always teaches something.
+
+\emph{Validation} is the part that changes what this report can claim. The
+hydrodynamic coefficients agree with the CAD geometry to a factor of
+\hydroDragRatio{} in axial drag, but both sides of that comparison are
+closed form, and the station keeping margin of \hydroMargin{} rests on
+them. A tow tank replaces the estimate with a measurement. A pressure vessel
+turns a factor of \structFrameGain{} on paper into a qualified depth. Neither
+is expensive next to the sonar, and both convert an assumption into a number.
+
+Tables~\ref{tab:budgetA} to \ref{tab:budgetD} give every line, why it exists
+and what its price rests on. Table~\ref{tab:budgetroll} totals them.
+
+\input{budget_tables}
+
+Three things are worth reading off the totals. The airframe is
+\SI{\bomAcousticsPct}{\percent} acoustics, so the vehicle around the sensors
+is cheap and the sensors are not. Capital and materials together are
+\SI{\budgetCapMatPct}{\percent} of the programme, which is what it costs to be
+able to build the thing at all rather than to buy one. And validation is
+\SI{\budgetValPct}{\percent}, which is the price of replacing the last of the
+closed form analysis with measurement.
+
 \subsection{Where this vehicle sits}
 
 \begin{table}[htbp]\centering\small
-\caption{Comparable compact survey vehicles. The price column mixes order price
-against a parts bill and is a scale reference, not a like for like comparison.}
+\caption{Comparable compact survey vehicles. Comparator prices are published
+order figures in USD; the isonavi-1 figure is the parts bill in INR at
+\rupeesign\,\bomRate{} per USD. The column mixes order price against a parts
+bill and is a scale reference, not a like for like comparison.}
 \begin{tabular}{lccc}
 \toprule
 & \textbf{REMUS 100} & \textbf{Iver3} & \textbf{isonavi-1} \\
@@ -1377,8 +1396,8 @@ Propulsion & prop and fins & prop and fins & eight vectored \\
 Hover and station keep & no & no & to
 \SI{\hydroEnvCad}{\metre\per\second} \\
 Designed for & open water survey & open water survey & flood debris \\
-Cost, USD & order \num{300000} & order \num{150000} &
-parts \bomTotal{} \\
+Cost & order \$300{,}000 & order \$150{,}000 &
+parts \INR{\bomTotal} \\
 \bottomrule
 \end{tabular}
 \end{table}

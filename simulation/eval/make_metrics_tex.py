@@ -210,6 +210,16 @@ for _n, _k in (("cadLengthM", "hull_length_mm"), ("cadDiaM",
 # The stability separation the dynamics model assumed before the CAD was built.
 cmd("cadBGAssumed", 85.0, "{:.0f}")
 
+# Buoyancy righting moment, weight times the separation. Derived rather than
+# written into the prose, so it follows the layout when the mass moves.
+_m = (cad or {}).get("mass_kg")
+_bg = (cad or {}).get("bg_mm")
+cmd("cadRighting", _m * 9.81 * _bg / 1000.0 if (_m and _bg) else None,
+    "{:.2f}")
+# The same moment at the separation the dynamics model was corrected to.
+cmd("cadRightingSim", _m * 9.81 * 27.3 / 1000.0 if _m else None, "{:.2f}")
+cmd("cadBGSim", 27.3, "{:.1f}")
+
 # ---------------------------------------------------------------- pressure hull
 _stp = os.path.join(os.path.dirname(ROOT), "cad", "isonavi_structures.json")
 struct = json.load(open(_stp)) if os.path.exists(_stp) else None
@@ -253,14 +263,37 @@ for _n, _k, _f in _HY:
 # ---------------------------------------------------------------- bill of materials
 _bmp = os.path.join(os.path.dirname(ROOT), "cad", "isonavi_bom.json")
 bom = json.load(open(_bmp)) if os.path.exists(_bmp) else None
-_BM = (("bomTotal", "total_usd", "{:,.0f}"),
+_BM = (("bomTotal", "total_inr", "{:,.0f}"),
        ("bomLakh", "total_lakh_inr", "{:.1f}"),
-       ("bomAcoustics", "acoustics_usd", "{:,.0f}"),
+       ("bomAcoustics", "acoustics_inr", "{:,.0f}"),
        ("bomAcousticsPct", "acoustics_pct", "{:.0f}"),
-       ("bomRest", "non_acoustics_usd", "{:.0f}"),
-       ("bomRate", "usd_inr", "{:.0f}"))
+       ("bomRest", "non_acoustics_inr", "{:,.0f}"),
+       ("bomRate", "usd_inr", "{:.2f}"))
+_BUDGET = (("budgetAirframe", "total_inr", "{:,.0f}"),
+           ("budgetCapital", "capital_inr", "{:,.0f}"),
+           ("budgetMaterials", "materials_inr", "{:,.0f}"),
+           ("budgetValidation", "validation_inr", "{:,.0f}"),
+           ("budgetContingency", "contingency_inr", "{:,.0f}"),
+           ("budgetContingencyPct", "contingency_pct", "{:.0f}"),
+           ("budgetProgramme", "programme_inr", "{:,.0f}"),
+           ("budgetProgrammeLakh", "programme_lakh_inr", "{:.1f}"),
+           ("budgetLines", "n_lines", "{}"))
 for _n, _k, _f in _BM:
     cmd(_n, bom.get(_k) if bom else None, _f)
+
+for _n, _k, _f in _BUDGET:
+    cmd(_n, bom.get(_k) if bom else None, _f)
+
+# Shares of the programme, derived so the prose cannot drift from
+# the table beside it.
+_prog = (bom or {}).get("programme_usd")
+_capmat = ((bom or {}).get("capital_usd", 0)
+           + (bom or {}).get("materials_usd", 0))
+cmd("budgetCapMatPct", 100 * _capmat / _prog if _prog else None,
+    "{:.0f}")
+cmd("budgetValPct",
+    100 * (bom or {}).get("validation_usd", 0) / _prog
+    if _prog else None, "{:.0f}")
 
 # ---------------------------------------------------------------- energy
 _enp = os.path.join(os.path.dirname(ROOT), "cad", "isonavi_energy.json")

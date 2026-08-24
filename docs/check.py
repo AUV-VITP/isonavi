@@ -71,9 +71,15 @@ README_PINS = [
     ("boardComputeMean", "34.6"),
     ("cadMass", "28.0"),
     ("cadNetBuoy", "1.96"),
-    ("cadBG", "27.6"),
+    ("cadBG", "25.6"),
     ("structDepth", "50"),
-    ("bomTotal", "32,825"),
+    ("bomTotal", "3,827,800"),
+    ("bomLakh", "38.3"),
+    ("budgetProgramme", "7,278,908"),
+    ("budgetProgrammeLakh", "72.8"),
+    ("budgetCapital", "1,140,890"),
+    ("budgetValidation", "1,358,088"),
+    ("bomRate", "95.64"),
 ]
 
 

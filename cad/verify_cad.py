@@ -61,7 +61,7 @@ def main():
 
     print("\n the hull encloses its own internals")
     r_min = min(abs(p.pos[2]) for p in parts
-                if p.name in ("battery pack 14S4P", "trim ballast"))
+                if p.name in ("battery pack 14S6P", "trim ballast"))
     inner_r = L.HULL_R - L.SKIN_T
     ok_fit = True
     for p in parts:

@@ -363,7 +363,7 @@ def build(cutaway=False, explode=0.0):
         add(hull.intersect(knife), "acoustic window", C_WINDOW, (1.5, 0, 0))
 
     # -- internals
-    p = pos["battery pack 14S4P"]
+    p = pos["battery pack 14S6P"]
     add(battery_pack().translate((p[0] * MM, p[1] * MM, p[2] * MM)),
         "battery", C_BATT, (0, 0, -1.5))
     p = pos["electronics stack"]

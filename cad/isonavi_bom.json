@@ -1,20 +1,48 @@
 {
- "total_usd": 32825.0,
- "total_lakh_inr": 27.573,
- "usd_inr": 84.0,
+ "total_usd": 40023.0,
+ "total_inr": 3827800,
+ "total_lakh_inr": 38.2779972,
+ "usd_inr": 95.64,
  "acoustics_usd": 23710.0,
- "acoustics_pct": 72.23153084539223,
- "non_acoustics_usd": 9115.0,
+ "acoustics_inr": 2267624,
+ "acoustics_pct": 59.240936461534616,
+ "non_acoustics_usd": 16313.0,
+ "non_acoustics_inr": 1560175,
  "groups": {
   "acoustics": 23710.0,
-  "propulsion": 1880.0,
-  "power": 850.0,
-  "avionics": 1135.0,
-  "structure": 5250.0
+  "sensors": 510.0,
+  "propulsion": 7512.0,
+  "power": 869.0,
+  "avionics": 382.0,
+  "structure": 7040.0
  },
- "n_lines": 12,
+ "n_lines": 58,
  "comparators": {
   "REMUS 100": 300000,
   "Iver3": 150000
- }
+ },
+ "cat_usd": {
+  "A": 40023.0,
+  "B": 11929.0,
+  "C": 1801.0,
+  "D": 14200.0
+ },
+ "cat_inr": {
+  "A": 3827800,
+  "B": 1140890,
+  "C": 172248,
+  "D": 1358088
+ },
+ "capital_usd": 11929.0,
+ "capital_inr": 1140890,
+ "materials_usd": 1801.0,
+ "materials_inr": 172248,
+ "validation_usd": 14200.0,
+ "validation_inr": 1358088,
+ "contingency_pct": 12.0,
+ "contingency_usd": 8154.36,
+ "contingency_inr": 779883,
+ "programme_usd": 76107.36,
+ "programme_inr": 7278908,
+ "programme_lakh_inr": 72.78907910400001
 }

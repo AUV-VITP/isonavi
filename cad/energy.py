@@ -28,7 +28,7 @@ import numpy as np
 import isonavi_layout as L
 
 RHO = 1000.0
-BATTERY_WH = 1500.0        # 14S4P lithium ion, as in the bill of materials
+BATTERY_WH = 1500.0        # 14S6P lithium ion, 84 cells, as in the bill of materials
 USABLE = 0.80              # reserve held back, so 80 percent is available
 
 DUCT_D = 0.100             # thruster disc diameter, m

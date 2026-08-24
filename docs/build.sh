@@ -9,6 +9,9 @@ set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo="$(dirname "$here")"
 
+echo "regenerating bill of materials and programme budget"
+( cd "$repo/cad" && python3 bom.py > /tmp/isonavi_bom.log 2>&1 )
+
 echo "regenerating metrics from the measured result files"
 ( cd "$repo/simulation" && PYTHONPATH=. python3 eval/make_metrics_tex.py )
 
