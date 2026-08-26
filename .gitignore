@@ -21,3 +21,6 @@ docs/*.toc
 
 # CAD meshes are regenerable from isonavi_cad.py; keep STEP + params only.
 cad/*.stl
+
+# Slide deck, kept out of the repository.
+ppt/

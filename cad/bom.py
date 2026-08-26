@@ -1,12 +1,13 @@
 """Programme budget for isonavi, line by line, with the reason for each line.
 
-Four things are costed separately because they behave differently and a funder
+Five things are costed separately because they behave differently and a funder
 needs to see them apart:
 
   A  airframe        the parts that fly, one vehicle
   B  capital         equipment bought once and used for every build after
   C  materials       stock and consumables, per airframe plus workshop
   D  validation      the measurements that replace the closed form estimates
+  E  manpower        the people paid to do the build and the trials
 
 Every line carries a sourcing basis, because the confidence is not uniform:
 
@@ -15,6 +16,11 @@ Every line carries a sourcing basis, because the confidence is not uniform:
   market      a commodity rate, varies with supplier and quantity
   workshop    a fabrication estimate from the drawing
   service     a facility or contractor day rate
+  norm        a published fellowship or salary rate
+
+Those five are an engineering view. The sponsor asks for a different five,
+so every line also carries the head it falls under in that format, and the
+mapping is stated rather than assumed. See HEAD_BY_CAT.
 
 Masses come from the solved layout so the budget and the mass budget cannot
 disagree about what the vehicle is made of.
@@ -30,6 +36,13 @@ import isonavi_layout as L
 # Mid-market open on 24 August 2026 (Moneycontrol / USD-INR spot ~95.64).
 USD_INR = 95.64
 CONTINGENCY = 0.12      # on the programme, not on the airframe
+
+# Salaries are set in rupees, not converted into them, so the monthly rate is
+# divided back out here. Carrying a rounded dollar figure instead would make
+# 24 months of a Rs. 31,000 post come to Rs. 7,43,995 rather than Rs. 7,44,000,
+# which is the kind of arithmetic a reviewer checks first.
+PA_MONTH_INR = 31000.0          # Project Associate-I, standard rate
+PA_MONTH = PA_MONTH_INR / USD_INR
 
 
 def indian_group(n):
@@ -289,6 +302,25 @@ LINES = [
      1, 180.0, "market",
      "Surface preparation is most of the labour in a bonded assembly and all "
      "of the reason bonds fail."),
+    ("C", "trials", "Spare seal and O-ring sets for the trial campaign",
+     1, 260.0, "market",
+     "Every seal is remade every time the hull is opened, and across two "
+     "seasons of trials that is dozens of openings. Reusing a seal is the "
+     "usual cause of a flooded dive."),
+    ("C", "trials", "Replacement cells and pack refresh after trial cycling",
+     1, 420.0, "market",
+     "A pack cycled hard across a trial season loses capacity, and the "
+     "endurance numbers are only meaningful on a pack in known condition."),
+    ("C", "trials", "Ballast weights, recovery lines, buoys and site kit",
+     1, 340.0, "market",
+     "Trim is set with real weights on the day, and a vehicle in a current "
+     "is recovered on a line to a marked buoy. Consumed and lost at a rate "
+     "anyone who has worked off a boat will recognise."),
+    ("C", "trials", "Post immersion servicing, fresh water and inhibitors",
+     1, 180.0, "market",
+     "Every immersion in river or brackish water is followed by a fresh "
+     "water flush and a corrosion inhibitor pass, or the fasteners and "
+     "connectors do not survive the season."),
 
     # ------------------------------------------------------ D validation
     ("D", "hydrodynamics", "Tow tank campaign, five days",
@@ -301,10 +333,17 @@ LINES = [
      1, 1100.0, "service",
      "An independent witness on the depth rating, so the qualification is "
      "not self certified."),
-    ("D", "field", "Tank and reservoir trials, ten days",
-     1, 2600.0, "service",
+    ("D", "field", "Test tank and reservoir hire, ten days",
+     1, 1500.0, "service",
      "First wet running of the integrated vehicle: buoyancy, trim, thruster "
-     "authority and the autonomy closing its own loop against real water."),
+     "authority and the autonomy closing its own loop against real water. "
+     "Hire of a controlled pool for the buoyancy and trim work, then open "
+     "reservoir water for the autonomy runs."),
+    ("D", "field", "Reservoir trial travel, accommodation and boat support",
+     1, 1100.0, "service",
+     "Ten days on site for four people, with a support boat for launch and "
+     "recovery. Separated from the hire charge above because the two are "
+     "different kinds of cost and a funder should see them apart."),
     ("D", "field", "Instrumented river trial, boat and crew, six days",
      1, 3900.0, "service",
      "The only way to see the vehicle in the current and turbidity it was "
@@ -318,6 +357,24 @@ LINES = [
      1, 600.0, "service",
      "A navigation claim rests on the sensors being what their datasheets "
      "say. Calibrated once, against a reference."),
+    ("D", "field", "Team travel and accommodation, tank and proof test",
+     1, 1400.0, "service",
+     "Four people to the tow tank and the pressure test facility and back. "
+     "The facility charges above buy the tank; this buys the people who have "
+     "to be standing next to it."),
+
+    # ---------------------------------------------------------- E manpower
+    ("E", "manpower", "Project associate, full term, 24 months",
+     24, PA_MONTH, "norm",
+     "One engineer across the whole programme, carrying the design from the "
+     "tow tank into the build and out to the river. Continuity is the point: "
+     "the students who wrote the stack graduate during this window. Costed "
+     "at the standard Project Associate-I rate of Rs. 31,000 a month."),
+    ("E", "manpower", "Project associate, build and first trials, 12 months",
+     12, PA_MONTH, "norm",
+     "A second pair of hands for months 7 to 18, which is the hardware peak: "
+     "layup and cure, integration, then the tank and reservoir campaign. One "
+     "person cannot lay up a hull and instrument a trial in the same week."),
 ]
 
 COMPARATORS = [
@@ -330,7 +387,55 @@ CAT_NAME = {
     "B": "Capital equipment and tooling, bought once",
     "C": "Raw materials and consumables",
     "D": "Validation and field trials",
+    "E": "Manpower",
 }
+
+# The sponsor's budget format has five fixed heads. Our engineering
+# categories are not the same shape, so every line is mapped explicitly
+# rather than by category, and the mapping is stated so a reviewer can
+# check it. Capital and airframe are both Equipment because both are
+# assets that survive the programme; facility and testing charges are
+# Consumables because they are bought, used and gone; only the movement
+# of people is Travel.
+HEADS = ("Equipment", "Manpower", "Consumables", "Travel", "Contingency")
+
+HEAD_BY_CAT = {"A": "Equipment", "B": "Equipment", "C": "Consumables",
+               "D": "Consumables", "E": "Manpower"}
+
+HEAD_OVERRIDE = {
+    "Reservoir trial travel, accommodation and boat support": "Travel",
+    "Instrumented river trial, boat and crew, six days": "Travel",
+    "Team travel and accommodation, tank and proof test": "Travel",
+}
+
+# Spend profile across the four six-month quarters. Defaults follow the
+# category; lines whose timing is set by the plan rather than the category
+# override it.
+PHASE_BY_CAT = {
+    "A": (0.30, 0.70, 0.00, 0.00),
+    "B": (0.70, 0.30, 0.00, 0.00),
+    "C": (0.30, 0.50, 0.10, 0.10),
+    "D": (0.00, 1.00, 0.00, 0.00),
+    "E": (0.25, 0.25, 0.25, 0.25),
+}
+
+PHASE_OVERRIDE = {
+    "Tow tank campaign, five days": (1.0, 0.0, 0.0, 0.0),
+    "Hydrostatic proof test, witnessed": (1.0, 0.0, 0.0, 0.0),
+    "Team travel and accommodation, tank and proof test": (1.0, 0, 0, 0),
+    "Instrumented river trial, boat and crew, six days": (0, 0, 0.5, 0.5),
+    "Diver survey for scour ground truth": (0.0, 0.0, 0.5, 0.5),
+    "Project associate, build and first trials, 12 months":
+        (0.0, 0.5, 0.5, 0.0),
+}
+
+
+def head_of(cat, name):
+    return HEAD_OVERRIDE.get(name, HEAD_BY_CAT[cat])
+
+
+def phase_of(cat, name):
+    return PHASE_OVERRIDE.get(name, PHASE_BY_CAT[cat])
 
 
 def tex_escape(s):
@@ -344,11 +449,37 @@ def rollup():
     for cat, grp, name, qty, unit, basis, why in LINES:
         ext = qty * unit
         rows.append(dict(cat=cat, grp=grp, name=name, qty=qty, unit=unit,
-                         ext=ext, basis=basis, why=why))
+                         ext=ext, basis=basis, why=why,
+                         head=head_of(cat, name), phase=phase_of(cat, name)))
         cats[cat] = cats.get(cat, 0.0) + ext
         if cat == "A":
             groups[grp] = groups.get(grp, 0.0) + ext
     return rows, cats, groups
+
+
+def by_head(rows, cont):
+    """Totals under the sponsor's five heads, and the same split by quarter.
+
+    Contingency is a reserve against the things that can overrun: equipment
+    that arrives at a different price, a facility that needs a second visit,
+    a trial that loses a day to weather. Salaries do not overrun, so the
+    reserve is taken on everything except manpower and is reported as its
+    own head rather than smeared across the others.
+    """
+    heads = {h: 0.0 for h in HEADS}
+    quarters = {h: [0.0] * 4 for h in HEADS}
+    for r in rows:
+        heads[r["head"]] += r["ext"]
+        for q in range(4):
+            quarters[r["head"]][q] += r["ext"] * r["phase"][q]
+
+    # The reserve follows the profile of the spend it is protecting.
+    guarded = [sum(quarters[h][q] for h in HEADS if h != "Manpower")
+               for q in range(4)]
+    tot = sum(guarded) or 1.0
+    heads["Contingency"] = cont
+    quarters["Contingency"] = [cont * g / tot for g in guarded]
+    return heads, quarters
 
 
 def write_tex(rows, cats, groups, air, prog, cont, docs, parts):
@@ -362,7 +493,7 @@ def write_tex(rows, cats, groups, air, prog, cont, docs, parts):
         "% Generated by cad/bom.py. Do not edit: rebuild with docs/build.sh.",
         "",
     ]
-    for cat in ("A", "B", "C", "D"):
+    for cat in ("A", "B", "C", "D", "E"):
         sel = [r for r in rows if r["cat"] == cat]
         out += [
             r"\begin{small}",
@@ -406,7 +537,7 @@ def write_tex(rows, cats, groups, air, prog, cont, docs, parts):
         r"\textbf{Category} & \textbf{Amount} & \textbf{Share} \\",
         r"\midrule",
     ]
-    for cat in ("A", "B", "C", "D"):
+    for cat in ("A", "B", "C", "D", "E"):
         out.append(
             f"{tex_escape(CAT_NAME[cat])} & \\INR{{{inr_fmt(cats[cat])}}} & "
             f"{100 * cats[cat] / prog:.0f} \\% \\\\")
@@ -493,12 +624,16 @@ def main():
 
     air = cats["A"]
     base = sum(cats.values())
-    cont = base * CONTINGENCY
+    # The reserve is taken on everything the programme buys, not on the
+    # salaries, which are known to the rupee once the rate is fixed.
+    guarded = base - cats.get("E", 0.0)
+    cont = guarded * CONTINGENCY
     prog = base + cont
+    heads, quarters = by_head(rows, cont)
 
     print("isonavi programme budget")
     print("=" * 92)
-    for cat in ("A", "B", "C", "D"):
+    for cat in ("A", "B", "C", "D", "E"):
         print(f"\n{cat}  {CAT_NAME[cat]}")
         print("-" * 92)
         for r in [x for x in rows if x["cat"] == cat]:
@@ -516,6 +651,22 @@ def main():
     print(f"  {'':52s}{'':4}{'':10}{inr(prog):>11,} INR"
           f"  ({prog * USD_INR / 1e5:.1f} lakh at {USD_INR:.2f}/USD)")
 
+    print("\n  by sponsor head, and by six month quarter")
+    print("-" * 92)
+    print(f"  {'head':22s}{'Q1':>13}{'Q2':>13}{'Q3':>13}{'Q4':>13}"
+          f"{'total':>14}")
+    for h in HEADS:
+        q = quarters[h]
+        print(f"  {h:22s}{q[0]:>13,.0f}{q[1]:>13,.0f}{q[2]:>13,.0f}"
+              f"{q[3]:>13,.0f}{heads[h]:>14,.0f}")
+    qt = [sum(quarters[h][i] for h in HEADS) for i in range(4)]
+    print(f"  {'TOTAL':22s}{qt[0]:>13,.0f}{qt[1]:>13,.0f}{qt[2]:>13,.0f}"
+          f"{qt[3]:>13,.0f}{sum(heads.values()):>14,.0f}")
+    print(f"  {'in lakh INR':22s}"
+          f"{qt[0] * USD_INR / 1e5:>13.2f}{qt[1] * USD_INR / 1e5:>13.2f}"
+          f"{qt[2] * USD_INR / 1e5:>13.2f}{qt[3] * USD_INR / 1e5:>13.2f}"
+          f"{prog * USD_INR / 1e5:>14.2f}")
+
     ac = groups.get("acoustics", 0.0)
     print(f"\n  The two acoustic instruments are {100 * ac / air:.0f} percent "
           f"of the airframe.")
@@ -527,6 +678,35 @@ def main():
     docs = os.path.join(os.path.dirname(here), "docs")
     tp = write_tex(rows, cats, groups, air, prog, cont, docs, parts)
     print(f"\n  wrote {os.path.relpath(tp, os.path.dirname(here))}")
+
+    # The same budget under the sponsor's five heads, phased across the four
+    # six month quarters. Generated so the sheet a funder reads and the parts
+    # list this repository holds cannot disagree.
+    qt = [sum(quarters[h][i] for h in HEADS) for i in range(4)]
+    hrows = [
+        "% Generated by cad/bom.py. Do not edit.",
+        r"\begin{tabular}{lrrrrr}", r"\toprule",
+        r"\textbf{Budget head} & \textbf{Months 1--6} & "
+        r"\textbf{7--12} & \textbf{13--18} & \textbf{19--24} & "
+        r"\textbf{Total} \\", r"\midrule",
+    ]
+    for h in HEADS:
+        q = quarters[h]
+        hrows.append(
+            f"{h} & " + " & ".join(f"{v * USD_INR / 1e5:.2f}" for v in q)
+            + f" & {heads[h] * USD_INR / 1e5:.2f}" + r" \\")
+    hrows += [
+        r"\midrule",
+        r"\textbf{Total} & "
+        + " & ".join(f"\\textbf{{{v * USD_INR / 1e5:.2f}}}" for v in qt)
+        + f" & \\textbf{{{prog * USD_INR / 1e5:.2f}}}" + r" \\",
+        r"\multicolumn{6}{l}{\footnotesize All amounts in lakh INR at "
+        f"Rs.\\,{USD_INR:.2f}" + r" per USD.} \\",
+        r"\bottomrule", r"\end{tabular}",
+    ]
+    ph = os.path.join(docs, "budget_heads.tex")
+    open(ph, "w", encoding="utf-8").write("\n".join(hrows) + "\n")
+    print(f"  wrote {os.path.relpath(ph, os.path.dirname(here))}")
 
     out = {
         "total_usd": air,
@@ -555,6 +735,13 @@ def main():
         "programme_usd": prog,
         "programme_inr": inr(prog),
         "programme_lakh_inr": prog * USD_INR / 1e5,
+        "manpower_usd": cats.get("E", 0.0),
+        "manpower_inr": inr(cats.get("E", 0.0)),
+        "manpower_months": sum(r["qty"] for r in rows if r["cat"] == "E"),
+        "head_usd": heads,
+        "head_lakh_inr": {h: v * USD_INR / 1e5 for h, v in heads.items()},
+        "quarter_lakh_inr": {
+            h: [v * USD_INR / 1e5 for v in q] for h, q in quarters.items()},
     }
     p = os.path.join(here, "isonavi_bom.json")
     json.dump(out, open(p, "w"), indent=1)

@@ -294,6 +294,8 @@ _BUDGET = (("budgetAirframe", "total_inr", "indian"),
            ("budgetContingencyPct", "contingency_pct", "{:.0f}"),
            ("budgetProgramme", "programme_inr", "indian"),
            ("budgetProgrammeLakh", "programme_lakh_inr", "{:.1f}"),
+           ("budgetManpower", "manpower_inr", "indian"),
+           ("budgetManpowerMonths", "manpower_months", "{:.0f}"),
            ("budgetLines", "n_lines", "{}"))
 for _n, _k, _f in _BM:
     cmd(_n, bom.get(_k) if bom else None, _f)
@@ -311,6 +313,13 @@ cmd("budgetCapMatPct", 100 * _capmat / _prog if _prog else None,
 cmd("budgetValPct",
     100 * (bom or {}).get("validation_usd", 0) / _prog
     if _prog else None, "{:.0f}")
+
+# The sponsor's five heads, in lakh, for the summary table in the text.
+for _h, _tag in (("Equipment", "Equip"), ("Manpower", "Man"),
+                 ("Consumables", "Consum"), ("Travel", "Travel"),
+                 ("Contingency", "Cont")):
+    cmd(f"head{_tag}Lakh",
+        ((bom or {}).get("head_lakh_inr") or {}).get(_h), "{:.2f}")
 
 # ---------------------------------------------------------------- energy
 _enp = os.path.join(os.path.dirname(ROOT), "cad", "isonavi_energy.json")

@@ -75,10 +75,13 @@ README_PINS = [
     ("structDepth", "50"),
     ("bomTotal", "38,27,800"),
     ("bomLakh", "38.3"),
-    ("budgetProgramme", "72,78,908"),
-    ("budgetProgrammeLakh", "72.8"),
+    ("budgetProgramme", "86,73,412"),
+    ("budgetProgrammeLakh", "86.7"),
     ("budgetCapital", "11,40,890"),
-    ("budgetValidation", "13,58,088"),
+    ("budgetMaterials", "2,87,016"),
+    ("budgetValidation", "14,91,984"),
+    ("budgetManpower", "11,16,000"),
+    ("budgetContingency", "8,09,723"),
     ("bomRate", "95.64"),
 ]
 
