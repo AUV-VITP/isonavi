@@ -1333,7 +1333,7 @@ and that is a separate and much larger undertaking than the one proposed here.
 
 \subsection{What the programme costs, line by line}
 
-The bill above is the vehicle. It is not the programme. Three other things
+The bill above is the vehicle. It is not the programme. Four other things
 have to be bought, and quoting only the parts would understate what a build
 actually takes.
 
@@ -1356,7 +1356,16 @@ them. A tow tank replaces the estimate with a measurement. A pressure vessel
 turns a factor of \structFrameGain{} on paper into a qualified depth. Neither
 is expensive next to the sonar, and both convert an assumption into a number.
 
-Tables~\ref{tab:budgetA} to \ref{tab:budgetD} give every line, why it exists
+\emph{Manpower} is \budgetManpowerMonths{} person months across the two years,
+costed at the standard Project Associate-I rate. One engineer runs the whole
+term, because the students who wrote this stack graduate partway through it
+and the design has to stay in somebody's hands. A second joins for the
+hardware peak, months 7 to 18, when a hull is being laid up and a trial is
+being instrumented in the same weeks. A programme of this shape that asked
+for no salaries at all would be understating what it takes to run, not
+demonstrating thrift.
+
+Tables~\ref{tab:budgetA} to \ref{tab:budgetE} give every line, why it exists
 and what its price rests on. Table~\ref{tab:budgetroll} totals them.
 
 \input{budget_tables}
@@ -1368,6 +1377,34 @@ is cheap and the sensors are not. Capital and materials together are
 able to build the thing at all rather than to buy one. And validation is
 \SI{\budgetValPct}{\percent}, which is the price of replacing the last of the
 closed form analysis with measurement.
+
+\subsection{The same budget under the standard heads}
+
+The categories above are how the money is actually spent. Funding formats ask
+for a different five, so the same lines are mapped onto those heads and phased
+across the four six month quarters in Table~\ref{tab:budgetheads}. Nothing is
+added or removed in the mapping; only the grouping changes.
+
+Three choices in that mapping are worth stating, because a reader should not
+have to guess them. The airframe and the capital equipment are both
+\emph{Equipment}, since both are assets that outlive the programme. Facility
+and testing charges, the tow tank, the pressure vessel, the pool hire and the
+diver survey, are \emph{Consumables}, because they are bought, used and gone,
+and only the movement of people is \emph{Travel}. \emph{Contingency} is a
+reserve at \SI{\budgetContingencyPct}{\percent}, taken on everything except
+salaries, which are known to the rupee once the rate is fixed.
+
+The profile is front loaded, and deliberately so. The vehicle has to exist
+before it can be tested, so most of the equipment is bought in the first year
+while the later quarters carry the trials and the people running them.
+
+\begin{table}[htbp]\centering\small
+\caption{Programme budget under the standard heads, phased by quarter.
+Generated from the same line items as Tables~\ref{tab:budgetA}
+to~\ref{tab:budgetE}, so the two views cannot disagree.}
+\label{tab:budgetheads}
+\input{budget_heads}
+\end{table}
 
 \subsection{Where this vehicle sits}
 
